@@ -35,7 +35,7 @@ class PaceRaceEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
     
 
-    def __init__(self, CF=0.7, CR=0.7, M=1, JZ=1, LF=1, LR=1, CT=0.1):
+    def __init__(self, CF=0.7, CR=0.7, M=1, JZ=1, LF=1, LR=1, CT=0.1, MU=1):
         
         # Car-Design
         self.CF = CF
@@ -44,6 +44,7 @@ class PaceRaceEnv(gym.Env):
         self.JZ = JZ
         self.LF = LF
         self.LR = LR
+        self.MU = MU # Reibzahl, trockener Asphalt
         
         # Numerical timestamp
         self.cycletime = CT
@@ -135,13 +136,32 @@ class PaceRaceEnv(gym.Env):
         self.state = tuple(res.y[0:6,-1])    # UPDATE STATES
         self.t0 = self.t0+self.cycletime
         
+        # return forces
+        a, delta = action # unpack the action variables, because delta is needed
+        omega_after_int = res.y[5,-1] # get current angle velocity
+        R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
+        F_ctfg = self.M * omega_after_int**2 * R # centrifugal force
+        
+        
         # Convert a possible numpy bool to a Python bool
         done = bool(self.state[0] >= self.goal_position)
         
         # Reward
         reward = 0
-        # TODO: hier Kollisionsabfrage zwischen fzg u strecke abfragen
-        # TODO: hier F-Kritisch abfragen (aus der Kurve fliegen)
+        ## TODO: hier Kollisionsabfrage zwischen fzg u strecke abfragen
+        # get_sensor = FUNKTION_VON_ELISEO1 fragt Sensordaten ab
+        # collision_check = FUNKTION_VON_ELISEO2 gibt bool zurück
+        # if collision_check:
+        #     FUNKTION_VON_ELISEO3 setzt Pos. zurück auf Mittellinie
+        
+        ## TODO: hier F-Kritisch abfragen (aus der Kurve fliegen)
+        Fmax = self.M * 9.81 * self.MU # radius of traction circle
+        Fres = math.sqrt((self.M * a)**2 + F_ctfg**2) # resulting force
+        if Fres > Fmax:
+            # self.state[0:3] = FUNKTION_VON_ELISEO3 setzt Pos. zurück auf Mittellinie
+            self.state[3:6] = 0, 0, 0 # set velocities and psi to zero
+          
+        
         if not done:
             reward -= 1.0
         else:
