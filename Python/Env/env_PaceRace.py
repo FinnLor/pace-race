@@ -35,7 +35,7 @@ class PaceRaceEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
     
 
-    def __init__(self, CF=0.7, CR=0.7, M=1, JZ=1, LF=1, LR=1, CT=0.1, MU=1):
+    def __init__(self, CF=0.7, CR=0.7, M=1, JZ=1, LF=1, LR=1, CT=0.1, MU=1.0):
         
         # Car-Design
         self.CF = CF
