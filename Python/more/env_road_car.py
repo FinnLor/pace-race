@@ -248,11 +248,8 @@ class car:
         v_x = np.array([10, 0])
         psi = np.arccos(np.dot(v_start,v_x)/(np.linalg.norm(v_start)*np.linalg.norm(v_x)))
 
-        print("xxx hier weiter")
-        print(x)
-        print(y)
         self.set_car_pos(x,y,psi,0)
-        self.set_car_pos(x,y,psi,0)
+        self.set_car_pos(x,y,psi,0) # xxx has to be set two times! why?!
         
         
     def car_pos_reset(self): # reset car position
