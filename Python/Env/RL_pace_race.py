@@ -1,6 +1,6 @@
 import os
-import env_PaceRaceV2
-from stable_baselines3 import DQN
+import env_PaceRace
+from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -20,16 +20,14 @@ config = {'total_timesteps': 300_000,
 
 
 ### ENV SETUP
-env = Monitor(env_PaceRaceV2.PaceRaceEnv())
+env = Monitor(env_PaceRace.PaceRaceEnv())
 check_env(env, warn=True)
 
 ### MODEL SETUP
-model = DQN('MlpPolicy',
+model = A2C('MlpPolicy',
             env,
             verbose=0,
             gamma=1.0,
-            exploration_final_eps=config['exploration_final_eps'],
-            exploration_fraction=config['exploration_fraction'],
             learning_rate=config['learning_rate'],
             policy_kwargs={'net_arch': config['network_size']})
 
