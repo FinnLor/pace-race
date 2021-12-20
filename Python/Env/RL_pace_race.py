@@ -78,3 +78,14 @@ while True:
     print()
 
 env.close()
+
+''' 
+model.save("a2c_pace_race") # save model like this
+model = A2C.load("a2c_pace_race") # load model like this
+# test model like this:
+obs = env.reset()
+while True:
+    action, _states = model.predict(obs)
+    obs, rewards, dones, info = env.step(action)
+    env.render()
+'''
