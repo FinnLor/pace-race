@@ -35,7 +35,7 @@ class PaceRaceEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
     
 
-    def __init__(self, CF=0.7, CR=0.7, M=1, JZ=1, LF=1, LR=1, CT=0.1):
+    def __init__(self, CF=0.7, CR=0.7, M=1, JZ=1, LF=1, LR=1, CT=0.1, MU=1.0):
         
         # Car-Design
         self.CF = CF
@@ -44,6 +44,7 @@ class PaceRaceEnv(gym.Env):
         self.JZ = JZ
         self.LF = LF
         self.LR = LR
+        self.MU = MU # Reibzahl, trockener Asphalt
         
         # Numerical timestamp
         self.cycletime = CT
@@ -52,30 +53,32 @@ class PaceRaceEnv(gym.Env):
         # # Road
         # self.road_path = lambda x,slope,bias : x*slope+bias
                 
-        # Actions and Observations
+        # # Actions and Observations
+        # SOLLTE NORMALISIERT WERDEN?
+        
         self.max_x_position = np.finfo(np.float32).max
-        self.min_x_position = 0
+        self.min_x_position = np.finfo(np.float32).min
         
         self.max_y_position = np.finfo(np.float32).max
         self.min_y_position = np.finfo(np.float32).min
         
-        self.max_yaw_angle = 2*np.pi
-        self.min_yaw_angle = 0                                      # DAS IST KOMPLIZIERT ZU BEHANDELN !!! -> Modulo
+        self.max_yaw_angle = np.finfo(np.float32).max
+        self.min_yaw_angle =  np.finfo(np.float32).min                                 # DAS IST KOMPLIZIERT ZU BEHANDELN !!! -> Modulo
         
-        self.max_velocity_lon = 10
-        self.min_velocity_lon = 0
+        self.max_velocity_lon = np.finfo(np.float32).max
+        self.min_velocity_lon = np.finfo(np.float32).min
         
-        self.max_velocity_lat = 10
-        self.min_velocity_lat = 0
+        self.max_velocity_lat = np.finfo(np.float32).max
+        self.min_velocity_lat = np.finfo(np.float32).min
     
-        self.max_acceleration = 10
-        self.min_acceleration = -self.max_acceleration
+        self.max_acceleration = np.finfo(np.float32).max
+        self.min_acceleration = np.finfo(np.float32).min
         
-        self.max_steering_angle = 60
-        self.min_steering_angle = -self.max_steering_angle
+        self.max_steering_angle = np.finfo(np.float32).max
+        self.min_steering_angle = np.finfo(np.float32).min
         
-        self.max_omega = 2*np.pi
-        self.min_omega = 0
+        self.max_omega = np.finfo(np.float32).max
+        self.min_omega = np.finfo(np.float32).min
         
         # Action Space
         self.low_action = np.array(
@@ -96,7 +99,7 @@ class PaceRaceEnv(gym.Env):
                  self.min_omega], dtype=np.float32
         )
         self.high_state = np.array(
-            [self.max_x_position, self.min_y_position, self.max_yaw_angle, \
+            [self.max_x_position, self.max_y_position, self.max_yaw_angle, \
              self.max_velocity_lon, self.max_velocity_lat, \
                  self.max_omega], dtype=np.float32
         )
@@ -132,23 +135,46 @@ class PaceRaceEnv(gym.Env):
         res = integrate.solve_ivp(fun=model, t_span=(self.t0, self.t0+self.cycletime), \
                                   y0=np.array(self.state), args=[action], \
                                   t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10))
-        self.state = tuple(res.y[0:6,-1])    # UPDATE STATES
+        self.state = np.array(res.y[0:6,-1], dtype=np.float32)    # UPDATE STATES
         self.t0 = self.t0+self.cycletime
         
+        # return forces
+        a, delta = action # unpack the action variables, because delta is needed
+        omega_after_int = res.y[5,-1] # get current angle velocity
+        try:
+            R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
+            F_ctfg = self.M * omega_after_int**2 * R # centrifugal force
+        except ZeroDivisionError:
+            F_ctfg = 0
+                   
         # Convert a possible numpy bool to a Python bool
         done = bool(self.state[0] >= self.goal_position)
+        done = False
         
         # Reward
         reward = 0
-        # TODO: hier Kollisionsabfrage zwischen fzg u strecke abfragen
-        # TODO: hier F-Kritisch abfragen (aus der Kurve fliegen)
+        
+        ## TODO: hier Kollisionsabfrage zwischen fzg u strecke abfragen
+        # get_sensor = FUNKTION_VON_ELISEO1 fragt Sensordaten ab
+        # collision_check = FUNKTION_VON_ELISEO2 gibt bool zurück
+        # if collision_check:
+        #     FUNKTION_VON_ELISEO3 setzt Pos. zurück auf Mittellinie
+        
+        ## TODO: hier F-Kritisch abfragen (aus der Kurve fliegen)
+        Fmax = self.M * 9.81 * self.MU # radius of traction circle
+        Fres = math.sqrt((self.M * a)**2 + F_ctfg**2) # resulting force
+        if Fres > Fmax:
+            # self.state[0:3] = FUNKTION_VON_ELISEO3 setzt Pos. zurück auf Mittellinie
+            self.state[3:6] = 0, 0, 0 # set velocities and psi to zero
+          
+        
         if not done:
             reward -= 1.0
         else:
             reward = 100.0
             
         info = dict()
-        return self.state, reward, done, info
+        return np.array([self.state], dtype=np.float32).flatten(), reward, done, info
     
     # Current Version of gym
     # def reset(self, seed: Optional[int] = None):
