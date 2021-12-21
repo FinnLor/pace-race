@@ -3,6 +3,9 @@
 Created on Mon Dec 13 12:32:03 2021
 
 @author: em, fl, fs
+
+Testfunktion in vereinfachter Umgebung
+
 """
 
 import numpy as np
@@ -48,6 +51,40 @@ car4_ls = LineString(car4_data)
 
 
 
+### SENSOR 1
+# initialize sensor
+l1 = np.array([[97, 30],[25, 43]])
+ref_p = Point(l1[0,:]) # Reference point, source of all Sensor_lines
+l1_p = Point(l1[1,:]) # Outer sensor point
+l1_ls = LineString(l1)
+isp_l = np.array(l1_ls.intersection(road_lsl)) # absolute position of intersection point(s) of sensor with left BORDER
+isp_r = np.array(l1_ls.intersection(road_lsr)) # absolute position of intersection point(s) of sensor with right BORDER
+
+# collect all distances for sensor 1
+distances1_l = []
+distances1_r = []
+if isp_l.ndim == 2:
+    for i in range(0,isp_l.shape[0]): # if there are more than one intersections with left BORDER
+       distances1_l.append(ref_p.distance(Point(isp_l[i,:])))
+    dist1_l = min(distances1_l)
+else:
+    if len(isp_l)==0: # if there is no intersection with left BORDER
+        dist1_l = ref_p.distance(l1_p)
+    else:
+        dist1_l = ref_p.distance(Point(isp_l)) # if there is one intersection with left BORDER
+if isp_r.ndim == 2:
+    for i in range(0,isp_r.shape[0]): # if there are more than one intersections with right BORDER
+       distances1_r.append(ref_p.distance(Point(isp_r[i,:])))
+    dist1_r = min(distances1_r)
+else:
+    if len(isp_r)==0: # if there is no intersection with right BORDER
+        dist1_r = ref_p.distance(l1_p)
+    else:
+        dist1_r = ref_p.distance(Point(isp_r)) # if there is one intersection with left BORDER
+distances = np.array([dist1_l, dist1_r]) # distance to left, right border
+
+
+
 # return start position for the car
 s_vec = road_data_center[1,:]-road_data_center[0,:]
 x_vec = np.array([10, 0])
@@ -60,40 +97,41 @@ c_c = Point(car1_c)
 #c_c_dm = c_c.distance(road_lsc)
 c_c_dl = c_c.distance(road_lsl)
 c_c_dr = c_c.distance(road_lsr)
-print("Abstände")
-#print(c_c_dm)
-print(c_c_dl)
-print(c_c_dr)
 pathlength = road_lsc.project(c_c,normalized = False) # return pathlength from polyline-start to shortest point-distance
-point_on_line = np.array(road_lsc.interpolate(pathlength).coords) # get coordinates for pathlength
+point_on_line = np.array(road_lsc.interpolate(pathlength)) # get coordinates for pathlength
+if c_c_dl >c_c_dr:
+    rot = np.array([[np.cos(m.pi/2), -np.sin(m.pi/2)], [np.sin(m.pi/2), np.cos(m.pi/2)]]) # rotation matrix clockwise 
+elif c_c_dl < c_c_dr:
+    rot = np.array([[np.cos(m.pi/2), np.sin(m.pi/2)], [-np.sin(m.pi/2), np.cos(m.pi/2)]]) # rotation matrix counter-clockwise 
+else:
+    print("testNIE")
 
-# xxx todo pseudocode:
-# if distance_car left_border < distance_car right_border
-#   turn vector (c_c - point_on_line) pi/2-wise negative
-# elseif distance_car left_border > distance_car right_border
-#   turn vector (c_c - Point_on_line) pi/2-wise positive
-# else
-#   print("Car position is not valid or street is too small.")
+c_c_np = np.array(c_c)
+v_forward = np.dot(rot,  (c_c_np - point_on_line)) # get forward-direction
+v_x = np.array([10, 0])
+psi_forward = np.arccos(np.dot(v_forward,v_x)/(np.linalg.norm(v_forward)*np.linalg.norm(v_x)))
+delta = 0
+#set_car_pos(point_on_line[0],point_on_line[1],psi_forward,delta) # oder so ähnliches muss aufgerufen werden
 
 
 
 # return True if the car did violate a BORDER (as an offest from central polyline!)
-c_p1 = Point(car_data[0,:])
-c_p2 = Point(car_data[1,:])
-c_p3 = Point(car_data[2,:])
-c_p4 = Point(car_data[3,:])
+c_p1 = Point(car1_data[0,:])
+c_p2 = Point(car1_data[1,:])
+c_p3 = Point(car1_data[2,:])
+c_p4 = Point(car1_data[3,:])
 c_p1_d = c_p1.distance(road_lsc)
 c_p2_d = c_p2.distance(road_lsc)
 c_p3_d = c_p3.distance(road_lsc)
 c_p4_d = c_p4.distance(road_lsc)
 c_maxdist = max(c_p1_d, c_p2_d, c_p3_d, c_p4_d)
 if c_maxdist > BORDER:
-    print("car.is.OUT!")
+    what = True
 else:
-    print("go go go")
-
-
-
+    what = False
+    
+    
+    
 # measure time needed
 t1 = t.time()-t0
 print("elapsed time [s]: ", t1)
@@ -107,9 +145,11 @@ plt.plot(car1_data[:,0],car1_data[:,1])
 plt.plot(car2_data[:,0],car2_data[:,1])
 plt.plot(car3_data[:,0],car3_data[:,1])
 plt.plot(car4_data[:,0],car4_data[:,1])
+plt.plot(l1[:,0],l1[:,1])
 plt.plot(border_data_left[:,0], border_data_left[:,1])
 plt.plot(border_data_right[:,0], border_data_right[:,1])
-plt.scatter(point_on_line[0,0],point_on_line[0,1])
+plt.scatter(point_on_line[0],point_on_line[1])
+plt.scatter(v_forward[0] + point_on_line[0], v_forward[1] + point_on_line[1])
 plt.scatter(car1_c[0], car1_c[1])
 
 
