@@ -41,7 +41,6 @@ import random as rnd
 
 
 class car:
-    
     '''
     Die Klasse 'car' beschreibt im Wesentlichen das geometrische Objekt 'car' 
     und bietet dem Anwender die Option, die Position zu bestimmen und 
@@ -78,9 +77,9 @@ class car:
             im kürzesten Abstand auf die Mittellinie der Strecke zurück. 
             Der Lenkeinschlag wird hierbei auf 'delta = 0 [rad]' zurückgesetzt.
             Die Methode benötigt Mittel- und Randlinien der Strecke.
+        auskommentiert, da nicht mehr benötigt:
         - set_reset_pos:
-            Bislang nur zur visuellen Kontrolle benötigt.
-     
+            Wurde zur visuellen Kontrolle benötigt. geht auch mit set_start_pos
     '''
     
     
@@ -94,7 +93,7 @@ class car:
         self.delta = delta # front_wheel_angle
         self.color = color 
         self.dc = (0, 0) # velocity of car_center
-        self.cl = 4 * self.FACTOR # car length
+        self.cl = 4 * self.FACTOR # car BOX length
         self.cw = 2 * self.FACTOR # car width
         self.c1 = (x-self.cl/2, y+self.cw/2) # create upper left corner of car
         self.c2 = (x-self.cl/2, y-self.cw/2) # create bottom left corner of car
@@ -103,20 +102,24 @@ class car:
         self.c5 = (x+self.cl/2, y+self.cw/2) # create upper right corner of car
        
         # initialize sensors
-        # self.s01 = (self.c4[0], self.c4[1]-self.cw*3/4)
-        # self.s02 = (self.c4[0], self.c4[1]-self.cw*3/4)
-        # self.s03 = (self.c4[0], self.c4[1]-self.cw*3/4)
-        # self.s04 = (self.c4[0], self.c4[1]-self.cw*3/4)
-        self.s05 = (self.c4[0]+self.SENSFACT*self.cl, self.c4[1]) # create sensor point no 05
-        # self.s06 = (self.c4[0], self.c4[1]-self.cw*3/4)
-        # self.s07 = (self.c4[0], self.c4[1]+self.cw*3/4)
-        # self.s08 = (self.c4[0], self.c4[1]-self.cw*3/4)
-        # self.s09 = (self.c4[0], self.c4[1]+self.cw*3/4)
+        self.s01 = (self.c4[0], self.c4[1]-self.cw) # create sensor point no 01 (right side)
+        # self.s02 = (self.c4[0], self.c4[1]-self.cw)
+        self.s03 = (self.c4[0]+self.SENSFACT*self.cl*5*3/4, self.c4[1]-self.cw)
+        # self.s04 = (self.c4[0], self.c4[1]-self.cw)
+        self.s05 = (self.c4[0]+self.SENSFACT*self.cl*5, self.c4[1]) # create sensor point no 05
+        # self.s06 = (self.c4[0], self.c4[1]+self.cw)
+        self.s07 = (self.c4[0]+self.SENSFACT*self.cl*5*3/4, self.c4[1]+self.cw)
+        # self.s08 = (self.c4[0], self.c4[1]+self.cw)
+        self.s09 = (self.c4[0], self.c4[1]+self.cw) # create sensor point no 09 (left side)
 
         # further initializations
         self.car_center = canvas.create_bitmap(x, y) # car_center position
         self.car_polygon = canvas.create_polygon(self.c1, self.c2, self.c3, self.c4, self.c5, fill = self.color)
+        self.sensor01 = canvas.create_line((self.c4,self.s01) , fill = self.color)
+        self.sensor03 = canvas.create_line((self.c4,self.s03) , fill = self.color)
         self.sensor05 = canvas.create_line((self.c4,self.s05) , fill = self.color)
+        self.sensor07 = canvas.create_line((self.c4,self.s07) , fill = self.color)
+        self.sensor09 = canvas.create_line((self.c4,self.s09) , fill = self.color)
         self._car_rot_d(psi) # call method _car_rot_d
         self._sensor_rot(delta) # call method _sensor_rot
 
@@ -127,7 +130,11 @@ class car:
         self.dc = (dx, dy) # velocity of car
         self.dpsi = dpsi # angle velocity of car
         self._car_rot_d(dpsi) # let the car rotate with the desired delta-psi
+        self.canvas.move(self.sensor01,self.dc[0],self.dc[1])
+        self.canvas.move(self.sensor03,self.dc[0],self.dc[1])
         self.canvas.move(self.sensor05,self.dc[0],self.dc[1])
+        self.canvas.move(self.sensor07,self.dc[0],self.dc[1])
+        self.canvas.move(self.sensor09,self.dc[0],self.dc[1])
         self.canvas.move(self.car_center,self.dc[0],self.dc[1]) # move the car_center
         self.canvas.move(self.car_polygon,self.dc[0],self.dc[1]) # move the car_polygon
 
@@ -138,7 +145,11 @@ class car:
         # RECIEVE CAR POSITION
         c_c      = self.canvas.coords(self.car_center) # extract car_center position data
         c_p      = self.canvas.coords(self.car_polygon) # extract car_polygon position data 
+        c_s01    = self.canvas.coords(self.sensor01) # extract sensor01 data
+        c_s03    = self.canvas.coords(self.sensor03) # extract sensor03 data
         c_s05    = self.canvas.coords(self.sensor05) # extract sensor05 data
+        c_s07    = self.canvas.coords(self.sensor07) # extract sensor07 data
+        c_s09    = self.canvas.coords(self.sensor09) # extract sensor09 data
         
         # GET RELATIVE CORNER VECTORS
         cc_c1    = np.array([c_p[0]   - c_c[0],c_p[1]   - c_c[1]]) # vector from car_center to c1
@@ -146,7 +157,11 @@ class car:
         cc_c3    = np.array([c_p[4]   - c_c[0],c_p[5]   - c_c[1]]) # vector from car_center to c3
         cc_c4    = np.array([c_p[6]   - c_c[0],c_p[7]   - c_c[1]]) # vector from car_center to c4 (sensor_center)
         cc_c5    = np.array([c_p[8]   - c_c[0],c_p[9]   - c_c[1]]) # vector from car_center to c5
+        cc_s01   = np.array([c_s01[2] - c_c[0],c_s01[3] - c_c[1]]) # vector from car_center to s01
+        cc_s03   = np.array([c_s03[2] - c_c[0],c_s03[3] - c_c[1]]) # vector from car_center to s03
         cc_s05   = np.array([c_s05[2] - c_c[0],c_s05[3] - c_c[1]]) # vector from car_center to s05
+        cc_s07   = np.array([c_s07[2] - c_c[0],c_s07[3] - c_c[1]]) # vector from car_center to s07
+        cc_s09   = np.array([c_s09[2] - c_c[0],c_s09[3] - c_c[1]]) # vector from car_center to s09
         
         # ROTATE CORNER VECTORS
         rot = np.array([[np.cos(dpsi), np.sin(dpsi)], [-np.sin(dpsi), np.cos(dpsi)]]) # rotation matrix physically correct  
@@ -156,7 +171,11 @@ class car:
         cc_c3n   = np.dot(rot,  cc_c3) # vector from car_center to rotated c3
         cc_c4n   = np.dot(rot,  cc_c4) # vector from car_center to rotated c4 (sensor_center)
         cc_c5n   = np.dot(rot,  cc_c5) # vector from car_center to rotated c5
+        cc_s01n  = np.dot(rot, cc_s01) # vector from car_center to rotated s01
+        cc_s03n  = np.dot(rot, cc_s03) # vector from car_center to rotated s03
         cc_s05n  = np.dot(rot, cc_s05) # vector from car_center to rotated s05
+        cc_s07n  = np.dot(rot, cc_s07) # vector from car_center to rotated s07
+        cc_s09n  = np.dot(rot, cc_s09) # vector from car_center to rotated s09
         
         # SET ABSOLUTE CORNER VECTORS
         self.c1  = (cc_c1n[0]  + c_c[0], cc_c1n[1]  + c_c[1]) # update vector from canvas_GUI to c1
@@ -164,11 +183,23 @@ class car:
         self.c3  = (cc_c3n[0]  + c_c[0], cc_c3n[1]  + c_c[1]) # update vector from canvas_GUI to c3
         self.c4  = (cc_c4n[0]  + c_c[0], cc_c4n[1]  + c_c[1]) # update vector from canvas_GUI to c4 (sensor_center)
         self.c5  = (cc_c5n[0]  + c_c[0], cc_c5n[1]  + c_c[1]) # update vector from canvas_GUI to c5
+        self.s01 = (cc_s01n[0] + c_c[0], cc_s01n[1] + c_c[1]) # update vector from canvas_GUI to s01
+        self.s03 = (cc_s03n[0] + c_c[0], cc_s03n[1] + c_c[1]) # update vector from canvas_GUI to s03
         self.s05 = (cc_s05n[0] + c_c[0], cc_s05n[1] + c_c[1]) # update vector from canvas_GUI to s05
+        self.s07 = (cc_s07n[0] + c_c[0], cc_s07n[1] + c_c[1]) # update vector from canvas_GUI to s07
+        self.s09 = (cc_s09n[0] + c_c[0], cc_s09n[1] + c_c[1]) # update vector from canvas_GUI to s09
 
         # UPDATE OBJECT
+        self.canvas.delete(self.sensor01) # delete old sensor
+        self.sensor01 = canvas.create_line((self.c4,self.s01) , fill = self.color) # set new, rotated sensor-line
+        self.canvas.delete(self.sensor03) # delete old sensor
+        self.sensor03 = canvas.create_line((self.c4,self.s03) , fill = self.color) # set new, rotated sensor-line
         self.canvas.delete(self.sensor05) # delete old sensor
         self.sensor05 = canvas.create_line((self.c4,self.s05) , fill = self.color) # set new, rotated sensor-line
+        self.canvas.delete(self.sensor07) # delete old sensor
+        self.sensor07 = canvas.create_line((self.c4,self.s07) , fill = self.color) # set new, rotated sensor-line
+        self.canvas.delete(self.sensor09) # delete old sensor
+        self.sensor09 = canvas.create_line((self.c4,self.s09) , fill = self.color) # set new, rotated sensor-line
         self.canvas.delete(self.car_polygon) # delete old car
         self.car_polygon = canvas.create_polygon(self.c1, self.c2, self.c3, self.c4, self.c5, fill = self.color) # set new, rotated car
     
@@ -183,7 +214,11 @@ class car:
         self.c3  = (c_c[0]+self.cl/2,   c_c[1]-self.cw/2) # set bottom right corner of car
         self.c4  = (c_c[0]+self.cl/1.5, c_c[1]) # set sensor center of car
         self.c5  = (c_c[0]+self.cl/2,   c_c[1]+self.cw/2) # set upper right corner of car
-        self.s05 = (self.c4[0]+self.SENSFACT*self.cl, self.c4[1]) # set sensor point no 05
+        self.s01 = (self.c4[0], self.c4[1]-self.cw) # set sensor point no 01
+        self.s03 = (self.c4[0]+self.SENSFACT*self.cl*5*3/4, self.c4[1]-self.cw)
+        self.s05 = (self.c4[0]+self.SENSFACT*self.cl*5, self.c4[1]) # create sensor point no 05
+        self.s07 = (self.c4[0]+self.SENSFACT*self.cl*5*3/4, self.c4[1]+self.cw)
+        self.s09 = (self.c4[0], self.c4[1]+self.cw) # set sensor point no 09
         
         # GET RELATIVE CORNER VECTORS
         cc_c1    = np.array([self.c1[0]  - c_c[0],self.c1[1]  - c_c[1]]) # vector from car_center to c1
@@ -191,7 +226,11 @@ class car:
         cc_c3    = np.array([self.c3[0]  - c_c[0],self.c3[1]  - c_c[1]]) # vector from car_center to c3
         cc_c4    = np.array([self.c4[0]  - c_c[0],self.c4[1]  - c_c[1]]) # vector from car_center to c4 (sensor_center)
         cc_c5    = np.array([self.c5[0]  - c_c[0],self.c5[1]  - c_c[1]]) # vector from car_center to c5
+        cc_s01   = np.array([self.s01[0] - c_c[0],self.s01[1] - c_c[1]]) # vector from car_center to s01
+        cc_s03   = np.array([self.s03[0] - c_c[0],self.s03[1] - c_c[1]]) # vector from car_center to s05
         cc_s05   = np.array([self.s05[0] - c_c[0],self.s05[1] - c_c[1]]) # vector from car_center to s05
+        cc_s07   = np.array([self.s07[0] - c_c[0],self.s07[1] - c_c[1]]) # vector from car_center to s05
+        cc_s09   = np.array([self.s09[0] - c_c[0],self.s09[1] - c_c[1]]) # vector from car_center to s09
         
         # ROTATE RELATIVE CORNER VECTORS
         rot = np.array([[np.cos(psi), np.sin(psi)], [-np.sin(psi), np.cos(psi)]]) # rotation matrix physically correct  
@@ -200,7 +239,11 @@ class car:
         cc_c3n   = np.dot(rot,  cc_c3) # vector from car_center to rotated c3
         cc_c4n   = np.dot(rot,  cc_c4) # vector from car_center to rotated c4
         cc_c5n   = np.dot(rot,  cc_c5) # vector from car_center to rotated c4
+        cc_s01n  = np.dot(rot, cc_s01) # vector from car_center to rotated s01
+        cc_s03n  = np.dot(rot, cc_s03) # vector from car_center to rotated s05
         cc_s05n  = np.dot(rot, cc_s05) # vector from car_center to rotated s05
+        cc_s07n  = np.dot(rot, cc_s07) # vector from car_center to rotated s05
+        cc_s09n  = np.dot(rot, cc_s09) # vector from car_center to rotated s09
         
         # SET ABSOLUTE CORNER VECTORS
         self.c1  = (cc_c1n[0]  + c_c[0], cc_c1n[1]  + c_c[1]) # update vector from canvas_GUI to c1
@@ -208,11 +251,23 @@ class car:
         self.c3  = (cc_c3n[0]  + c_c[0], cc_c3n[1]  + c_c[1]) # update vector from canvas_GUI to c3
         self.c4  = (cc_c4n[0]  + c_c[0], cc_c4n[1]  + c_c[1]) # update vector from canvas_GUI to c4
         self.c5  = (cc_c5n[0]  + c_c[0], cc_c5n[1]  + c_c[1]) # update vector from canvas_GUI to c4
+        self.s01 = (cc_s01n[0] + c_c[0], cc_s01n[1] + c_c[1]) # update vector from canvas_GUI to s01
+        self.s03 = (cc_s03n[0] + c_c[0], cc_s03n[1] + c_c[1]) # update vector from canvas_GUI to s03
         self.s05 = (cc_s05n[0] + c_c[0], cc_s05n[1] + c_c[1]) # update vector from canvas_GUI to s05
+        self.s07 = (cc_s07n[0] + c_c[0], cc_s07n[1] + c_c[1]) # update vector from canvas_GUI to s07
+        self.s09 = (cc_s09n[0] + c_c[0], cc_s09n[1] + c_c[1]) # update vector from canvas_GUI to s09
         
         # UPDATE OBJECT
+        self.canvas.delete(self.sensor01) # delete old sensor
+        self.sensor01 = canvas.create_line((self.c4,self.s01) , fill = self.color) # set new, rotated sensor-line
+        self.canvas.delete(self.sensor03) # delete old sensor
+        self.sensor03 = canvas.create_line((self.c4,self.s03) , fill = self.color) # set new, rotated sensor-line
         self.canvas.delete(self.sensor05) # delete old sensor
         self.sensor05 = canvas.create_line((self.c4,self.s05) , fill = self.color) # set new, rotated sensor-line
+        self.canvas.delete(self.sensor07) # delete old sensor
+        self.sensor07 = canvas.create_line((self.c4,self.s07) , fill = self.color) # set new, rotated sensor-line
+        self.canvas.delete(self.sensor09) # delete old sensor
+        self.sensor09 = canvas.create_line((self.c4,self.s09) , fill = self.color) # set new, rotated sensor-line
         self.canvas.delete(self.car_polygon) # delete old car
         self.car_polygon = canvas.create_polygon(self.c1, self.c2, self.c3, self.c4, fill = self.color) # set new, rotated car
 
@@ -220,20 +275,40 @@ class car:
 
     def _sensor_rot(self,delta):
         
-        # generate relative horizontal sensor vectors
-        s05_h_r = (self.SENSFACT*self.cl, 0) # sensor s05 horizontal and relative to sensor_center
+        # generate relative sensor vectors
+        s01_h_r = (0, -self.cw) # create sensor point no 01 (right side)
+        s03_h_r = (self.SENSFACT*self.cl*5*3/4, -self.cw)
+        s05_h_r = (self.SENSFACT*self.cl*5, 0) # sensor s05 horizontal and relative to sensor_center
+        s07_h_r = (self.SENSFACT*self.cl*5*3/4, +self.cw)
+        s09_h_r = (0, +self.cw) # create sensor point no 09 (right side)
 
         # rotate sensor vectors
         deltapsi = delta + self.psi
         rot = np.array([[np.cos(deltapsi), np.sin(deltapsi)], [-np.sin(deltapsi), np.cos(deltapsi)]]) # rotation matrix physically correct  
+        cc_s01n = np.dot(rot, s01_h_r) # new relative sensor point position
+        cc_s03n = np.dot(rot, s03_h_r) # new relative sensor point position
         cc_s05n = np.dot(rot, s05_h_r) # new relative sensor point position
+        cc_s07n = np.dot(rot, s07_h_r) # new relative sensor point position
+        cc_s09n = np.dot(rot, s09_h_r) # new relative sensor point position
 
         # set absolute sensor vectors
+        self.s01 = (cc_s01n[0] + self.c4[0], cc_s01n[1] + self.c4[1]) # update vector from canvas_GUI to s01
+        self.s03 = (cc_s03n[0] + self.c4[0], cc_s03n[1] + self.c4[1]) # update vector from canvas_GUI to s03
         self.s05 = (cc_s05n[0] + self.c4[0], cc_s05n[1] + self.c4[1]) # update vector from canvas_GUI to s05
+        self.s07 = (cc_s07n[0] + self.c4[0], cc_s07n[1] + self.c4[1]) # update vector from canvas_GUI to s07
+        self.s09 = (cc_s09n[0] + self.c4[0], cc_s09n[1] + self.c4[1]) # update vector from canvas_GUI to s09
         
         # update sensor data
+        self.canvas.delete(self.sensor01) # delete old sensor
+        self.sensor01 = canvas.create_line((self.c4,self.s01) , fill = self.color) # set new, rotated sensor data
+        self.canvas.delete(self.sensor03) # delete old sensor
+        self.sensor03 = canvas.create_line((self.c4,self.s03) , fill = self.color) # set new, rotated sensor data
         self.canvas.delete(self.sensor05) # delete old sensor
         self.sensor05 = canvas.create_line((self.c4,self.s05) , fill = self.color) # set new, rotated sensor data
+        self.canvas.delete(self.sensor07) # delete old sensor
+        self.sensor07 = canvas.create_line((self.c4,self.s07) , fill = self.color) # set new, rotated sensor data
+        self.canvas.delete(self.sensor09) # delete old sensor
+        self.sensor09 = canvas.create_line((self.c4,self.s09) , fill = self.color) # set new, rotated sensor data
     
  
     ### SET ARBITRARY CAR POSITION
@@ -248,7 +323,11 @@ class car:
         self.c3 = (x+self.cl/2, y-self.cw/2) # bottom right corner of car
         self.c4 = (x+self.cl/1.5, y) # sensor_center of car
         self.c5 = (x+self.cl/2, y+self.cw/2) # upper right corner of car
-        self.s05 = (self.c4[0]+self.SENSFACT*self.cl, self.c4[1]) # create sensor point no 05     
+        self.s01 = (self.c4[0], self.c4[1]-self.cw) # create sensor point no 01 (right side)
+        self.s03 = (self.c4[0]+self.SENSFACT*self.cl*5*3/4, self.c4[1]-self.cw)
+        self.s05 = (self.c4[0]+self.SENSFACT*self.cl*5, self.c4[1]) # create sensor point no 05   
+        self.s07 = (self.c4[0]+self.SENSFACT*self.cl*5*3/4, self.c4[1]+self.cw)
+        self.s09 = (self.c4[0], self.c4[1]+self.cw) # create sensor point no 09 (left side)
         
         # set new car_center
         self.canvas.delete(self.car_center) # delete old car_center
@@ -339,24 +418,24 @@ class car:
             print("Check whether car is already set to start or resume position.")
 
         
-    ### RESET CAR POSITION INTO x=0, y=0 (top left)   
-    def set_reset_pos(self):
+    # ### RESET CAR POSITION INTO x=0, y=0 (top left)  
+    # def set_reset_pos(self):
 
-        self.dc = (0, 0) # velocity of car
-        self.dpsi = 0 # velocity of car_angle
-        self.psi = 0 # car_angle
-        self.c1  = (-self.cl/2,   self.cw/2) # upper left corner of car
-        self.c2  = (-self.cl/2,  -self.cw/2) # bottom left corner of car
-        self.c3  = ( self.cl/2,  -self.cw/2) # bottom right corner of car
-        self.c4  = ( self.cl/1.5,  0) # light_center of car
-        self.c5  = ( self.cl/2,   self.cw/2) # upper right corner of car
-        self.s05 = ( self.c4[0]+5*self.cl, self.c4[1]) # create sensor point no 05
-        self.canvas.delete(self.car_center) # delete old car_center
-        self.car_center = canvas.create_bitmap(0, 0) # create new car_center with reset data
-        self.canvas.delete(self.sensor05) # delete old sensor
-        self.sensor05 = canvas.create_line((self.c4,self.s05) , fill = self.color) # set new, rotated sensor-line
-        self.canvas.delete(self.car_polygon) # delete old car polygon
-        self.car_polygon = canvas.create_polygon(self.c1, self.c2, self.c3, self.c4, self.c5, fill = self.color) # create new car_polygon with reset data
+    #     self.dc = (0, 0) # velocity of car
+    #     self.dpsi = 0 # velocity of car_angle
+    #     self.psi = 0 # car_angle
+    #     self.c1  = (-self.cl/2,   self.cw/2) # upper left corner of car
+    #     self.c2  = (-self.cl/2,  -self.cw/2) # bottom left corner of car
+    #     self.c3  = ( self.cl/2,  -self.cw/2) # bottom right corner of car
+    #     self.c4  = ( self.cl/1.5,  0) # light_center of car
+    #     self.c5  = ( self.cl/2,   self.cw/2) # upper right corner of car
+    #     self.s05 = ( self.c4[0]+5*self.cl, self.c4[1]) # create sensor point no 05
+    #     self.canvas.delete(self.car_center) # delete old car_center
+    #     self.car_center = canvas.create_bitmap(0, 0) # create new car_center with reset data
+    #     self.canvas.delete(self.sensor05) # delete old sensor
+    #     self.sensor05 = canvas.create_line((self.c4,self.s05) , fill = self.color) # set new, rotated sensor-line
+    #     self.canvas.delete(self.car_polygon) # delete old car polygon
+    #     self.car_polygon = canvas.create_polygon(self.c1, self.c2, self.c3, self.c4, self.c5, fill = self.color) # create new car_polygon with reset data
     
     
     
@@ -390,14 +469,15 @@ class road:
         gesetzt. Das Package 'shapely' gewährleistet, dass der geringste
         Abstand (Normalenabstand) über den ganzen Polygonzug ermittelt wird 
         und nicht nur zu den Polygonpunkten.
-    - get_sensordata:        
+    - get_sensordata(car.c4, car_sensor):        
         Gibt den Abstand des Sensors zu BEIDEN Rändern zurück.
         Falls die 'Sensorreichweite' nicht bis zum 'Rand' kommt, gibt die 
         Methode die maximale Sensorreichweite an.
         Falls innerhalb der 'Sensorreichweite' mehrere 'intersection' mit 
         einem Rand vorhanden sind, wird der kürzeste Abstnand angegeben.
-        Benötigt das Objekt 'car'.
-        
+        Benötigt die Properties:
+            - car.c4 (Ausgangspunkt für alle Sensoren)
+            - car.sxx (jeweiliger Sensorendpunkt, zB car.s05)
         TODO:
         Derzeit wird nur EIN sensor ausgewertet (der einige Meter vor 'car', 
         jedoch in 'delta-richtung')
@@ -443,9 +523,9 @@ class road:
         # generate road- and border data 
         line_data  = list((np.ravel(([x,y]),'F'))) # list is neccessary for a correct separation with comma
         road_center_ls = LineString(np.reshape(line_data,(self.NPOINTS,2)))
-        road_right_line1 = np.array(road_center_ls.parallel_offset(self.FACTOR*self.ROADWIDTH/2,"right",join_style=1))
+        road_right_line1 = np.array(road_center_ls.parallel_offset(self.FACTOR*self.ROADWIDTH/2,"left",join_style=1)) # 'left' offset for 'right' line is correct (due to -y-coordinate)
         road_right_line = list((np.ravel(([road_right_line1[:,0],road_right_line1[:,1]]),'F')))
-        road_left_line1 = np.array(road_center_ls.parallel_offset(self.FACTOR*self.ROADWIDTH/2,"left",join_style=1))
+        road_left_line1 = np.array(road_center_ls.parallel_offset(self.FACTOR*self.ROADWIDTH/2,"right",join_style=1)) # 'right' offset for 'left' line is correct (due to -y-coordinate)
         road_left_line = list((np.ravel(([road_left_line1[:,0],road_left_line1[:,1]]),'F')))
         
         # assign main road data
@@ -508,13 +588,15 @@ class road:
         return collision
         
     ### CHECK AND RETURN THE DISTANCES BETWEEN SENSOR-REFERENCE POINT AND BORDERS OF THE ROAD
-    def get_sensordata(self,car):
-        
+    # Der Versuch, hier einen internen FUnktionsaufruf als Schleife zu nutzen endet in der Fehlermeldung
+    # "cannot unpack non-iterable NoneType object"
+    def get_sensordata(self,car_c4,car_sensor):
+
         # transform sensor data
-        l1 = np.array([car.c4,car.s05])
-        ref_p = Point(l1[0,:]) # Reference point, source of all Sensor_lines
-        l1_p = Point(l1[1,:]) # Outer sensor point
-        l1_ls = LineString(l1)
+        sensorline = np.array([car_c4,car_sensor])
+        ref_p = Point(sensorline[0,:]) # Reference point, source of all Sensor_lines
+        l_p = Point(sensorline[1,:]) # Outer sensor point
+        l_ls = LineString(sensorline)
         
         # get and transform right and left border data
         right_line = self.canvas.coords(self.road_right_line) 
@@ -522,40 +604,42 @@ class road:
         size_rl = np.shape(rd_rl)[0]
         rs_rl = np.reshape(right_line,(int(0.5*size_rl),2))
         road_lsr = LineString(rs_rl)
-        isp_r = np.array(l1_ls.intersection(road_lsr)) # absolute position of intersection point(s) of sensor with right BORDER
+        isp_r = np.array(l_ls.intersection(road_lsr)) # absolute position of intersection point(s) of sensor with right BORDER
         left_line = self.canvas.coords(self.road_left_line) 
         rd_ll = np.array(left_line)
         size_ll = np.shape(rd_ll)[0]
         rs_ll = np.reshape(left_line,(int(0.5*size_ll),2))
         road_lsl = LineString(rs_ll)
-        isp_l = np.array(l1_ls.intersection(road_lsl)) # absolute position of intersection point(s) of sensor with left BORDER
+        isp_l = np.array(l_ls.intersection(road_lsl)) # absolute position of intersection point(s) of sensor with left BORDER
         
-        # collect all distances for the sensor
-        distances1_l = []
-        distances1_r = []
+        # collect all possible distances for the sensor
+        distances_r = []
+        distances_l = []
         if isp_l.ndim == 2:
             for i in range(0,isp_l.shape[0]): # if there are more than one intersections with left BORDER
-               distances1_l.append(ref_p.distance(Point(isp_l[i,:])))
-            dist1_l = min(distances1_l)
+               distances_l.append(ref_p.distance(Point(isp_l[i,:])))
+            dist_l = min(distances_l)
         else:
             if len(isp_l)==0: # if there is no intersection with left BORDER
-                dist1_l = ref_p.distance(l1_p)
+                dist_l = ref_p.distance(l_p)
             else:
-                dist1_l = ref_p.distance(Point(isp_l)) # if there is one intersection with left BORDER
+                dist_l = ref_p.distance(Point(isp_l)) # if there is one intersection with left BORDER
         if isp_r.ndim == 2:
             for i in range(0,isp_r.shape[0]): # if there are more than one intersections with right BORDER
-               distances1_r.append(ref_p.distance(Point(isp_r[i,:])))
-            dist1_r = min(distances1_r)
+               distances_r.append(ref_p.distance(Point(isp_r[i,:])))
+            dist_r = min(distances_r)
         else:
             if len(isp_r)==0: # if there is no intersection with right BORDER
-                dist1_r = ref_p.distance(l1_p)
+                dist_r = ref_p.distance(l_p)
             else:
-                dist1_r = ref_p.distance(Point(isp_r)) # if there is one intersection with left BORDER
-        distances = np.array([dist1_l, dist1_r]) # distance to left, right border
+                dist_r = ref_p.distance(Point(isp_r)) # if there is one intersection with left BORDER
         
-        return dist1_l, dist1_r # returns left and right distances
+        # resize sensor distances due to the FACTOR and return values
+        dist_r_r = dist_r/self.FACTOR
+        dist_r_l = dist_l/self.FACTOR
+        return dist_r_r, dist_r_l # returns left and right distances
     
-    
+             
     
     
 
@@ -591,7 +675,7 @@ VISUALIZE = True
 NPOINTS = 1000 # no of points of the central road line
 ROADWIDTH = 8
 FACTOR = 10 # resizing FACTOR, e.g. FAKTOR=10 => 10pixel==1m
-SENSFACTOR = 7 # resizing factor for sensors, e.g. SENSFACTOR = 5 => longest sensor distance is 5 times car-length
+SENSFACTOR = 1 # resizing factor for sensors 1 = standard
 canvas = tk.Canvas(win_env, width=WIDTH, height=HEIGHT) # rendering area in GUI for cars, theirs sensors and a road
 canvas.pack() # ist required to visualize the canvas
 button = tk.Button(win_env, text='enough', command = lambda:win_env.destroy()).pack(expand=True) # EXPERIMENTAL added button for closing GUI
@@ -617,7 +701,7 @@ car12 = car(canvas, 200, 600,  1.3, 1.3, FACTOR, SENSFACTOR, "orange")
 road_lsc = LineString(np.reshape(c_road.get_center_line(), (NPOINTS,2)))
 
 t0 = t.time()
-for i in range(0,100):
+for i in range(0,20):
 
     # collision1 test
     collision1 = c_road.collision_check(car01)
@@ -630,45 +714,62 @@ for i in range(0,100):
     # set car test
     car03.set_car_pos(rnd.uniform(0,WIDTH), rnd.uniform(0,HEIGHT), rnd.uniform(0,2*m.pi), rnd.uniform(0,2*m.pi))
 
+    # get sensordata of a car
+    s1_rightborder, s1_leftborder = c_road.get_sensordata(car05.c4, car05.s01)
+    s3_rightborder, s3_leftborder = c_road.get_sensordata(car05.c4, car05.s03)
+    s5_rightborder, s5_leftborder = c_road.get_sensordata(car05.c4, car05.s05)
+    s7_rightborder, s7_leftborder = c_road.get_sensordata(car05.c4, car05.s07)
+    s9_rightborder, s9_leftborder = c_road.get_sensordata(car05.c4, car05.s09)
+    print("Laufende SENSORDATEN von car05: ")
+    print("sensor 1, distance to RIGHT border: ", s1_rightborder)
+    print("sensor 1, distance to LEFT border: ", s1_leftborder)
+    print("sensor 3, distance to RIGHT border: ", s3_rightborder)
+    print("sensor 3, distance to LEFT border: ", s3_leftborder)
+    print("sensor 5, distance to RIGHT border: ", s5_rightborder)
+    print("sensor 5, distance to LEFT border: ", s5_leftborder)
+    print("sensor 7, distance to RIGHT border: ", s7_rightborder)
+    print("sensor 7, distance to LEFT border: ", s7_leftborder)
+    print("sensor 9, distance to RIGHT border: ", s9_rightborder)
+    print("sensor 9, distance to LEFT border: ", s9_leftborder)
+
+
     # car moving test
     car04._car_move_d(1.0,1.5,-0.10)
 
     # car sensor rotation test
-    car05._sensor_rot(-0.7+i/100)
+    car05._sensor_rot(-0.7+i/10)
     
     # car rotation test
     car06._car_rot_d(-0.1)
     
     if VISUALIZE == True:
         win_env.update()
-        t.sleep(0.005)
+        t.sleep(0.01)
 
 # car resume position and collide test
-car01.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car02.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car03.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car04.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car05.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car06.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car07.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car08.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car09.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car10.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car11.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
-car12.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car01.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car02.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car03.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car04.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car05.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car06.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car07.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car08.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car09.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car10.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car11.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
+#car12.set_resume_pos(c_road.get_center_line(), c_road.get_right_line(), c_road.get_left_line())
 collision8 = c_road.collision_check(car08) # test collision second time
 #print("COLLISION8 ", collision8)
 
 # car set start pos test
 car07.set_start_pos(c_road.get_center_line())
 
-# reset position test
-car09.set_reset_pos()
-
-# get sensordata of a car
-s5_leftborder, s5_rightborder = c_road.get_sensordata(car03)
-#print("sensor 5, distance to LEFT border: ", s5_leftborder)
-#print("sensor 5, distance to RIGHT border: ", s5_rightborder)
+# get final sensordata of a car
+s1_rightborder, s1_leftborder = c_road.get_sensordata(car05.c4,car05.s01)
+print("Abschließßende SENSORDATEN von car05: ")
+print("sensor 5, distance to RIGHT border: ", s1_rightborder)
+print("sensor 5, distance to LEFT border: ", s1_leftborder)
 
 if VISUALIZE == True:
     win_env.update()
