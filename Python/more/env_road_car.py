@@ -23,9 +23,9 @@ ACHTUNG:
 Dieses File beinhaltet derzeit die Klasse 'car', die Klasse 'road' und die aufrufende Umgebung.
 Die Beschreibungen dieser drei Komponenten finden sich jeweils zu Beginn des entsprechenden Codes.
 
+
 @author: em, fl, fs
 """
-
 
 
 from shapely.geometry import box, Polygon, LineString, Point
@@ -88,6 +88,7 @@ class car:
         # initialize
         self.FACTOR = FACTOR # resizing FACTOR, e.g. FAKTOR=10 => 10pixel==1m
         self.SENSFACT = SENSFACTOR # scaling factor for sensors as a multiplier of car length
+
         self.canvas = canvas
         self.psi = psi # car_angle
         self.delta = delta # front_wheel_angle
@@ -124,8 +125,7 @@ class car:
         self._sensor_rot(delta) # call method _sensor_rot
 
 
-   
-    def _car_move_d(self,dx,dy,dpsi): # difference-movement and -rotation
+       def _car_move_d(self,dx,dy,dpsi): # difference-movement and -rotation
         
         self.dc = (dx, dy) # velocity of car
         self.dpsi = dpsi # angle velocity of car
@@ -779,5 +779,3 @@ print("elapsed time [s]: ", t1)
 
 if VISUALIZE == True:
     win_env.mainloop()
-
-
