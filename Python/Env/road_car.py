@@ -40,7 +40,7 @@ import random as rnd
 
 
 
-class car:
+class Car:
     '''
     Die Klasse 'car' beschreibt im Wesentlichen das geometrische Objekt 'car' 
     und bietet dem Anwender die Option, die Position zu bestimmen und 
@@ -125,7 +125,7 @@ class car:
         self._sensor_rot(delta) # call method _sensor_rot
 
 
-       def _car_move_d(self,dx,dy,dpsi): # difference-movement and -rotation
+    def _car_move_d(self,dx,dy,dpsi): # difference-movement and -rotation
         
         self.dc = (dx, dy) # velocity of car
         self.dpsi = dpsi # angle velocity of car
@@ -442,7 +442,7 @@ class car:
     
     
     
-class road:
+class Road:
     '''
     Die Klasse 'road' erzeugt beim Instanzieren eine einfache, zufällig
     parametrisierte Strecke und beinhaltet eine Mittellinie und einen daraus
@@ -676,26 +676,26 @@ NPOINTS = 1000 # no of points of the central road line
 ROADWIDTH = 8
 FACTOR = 10 # resizing FACTOR, e.g. FAKTOR=10 => 10pixel==1m
 SENSFACTOR = 1 # resizing factor for sensors 1 = standard
-canvas = tk.Canvas(win_env, width=WIDTH, height=HEIGHT) # rendering area in GUI for cars, theirs sensors and a road
+canvas = tk.Canvas(win_env, width=WIDTH, height=HEIGHT) # rendering area in GUI for s, theirs sensors and a road
 canvas.pack() # ist required to visualize the canvas
 button = tk.Button(win_env, text='enough', command = lambda:win_env.destroy()).pack(expand=True) # EXPERIMENTAL added button for closing GUI
 
 ### CONSTRUCT ROAD
-c_road = road(canvas,FACTOR,WIDTH,HEIGHT,NPOINTS, ROADWIDTH)
+c_road = Road(canvas,FACTOR,WIDTH,HEIGHT,NPOINTS, ROADWIDTH)
 
-### CONSTRUCT CARS
-car01 = car(canvas, 140, 20,  0, 0, FACTOR, SENSFACTOR, "yellow")
-car02 = car(canvas, 100, 200,  0.6, -0.6, FACTOR, SENSFACTOR, "green")
-car03 = car(canvas, 110,  90,    0,   0, FACTOR, SENSFACTOR, "blue")
-car04 = car(canvas, 180, 100,    1,   1, FACTOR, SENSFACTOR, "black")
-car05 = car(canvas, 900, 400,  1.3, 1.3, FACTOR, SENSFACTOR, "pink")
-car06 = car(canvas, 300, 500,  1.3, -1.3, FACTOR, SENSFACTOR, "brown")
-car07 = car(canvas, 140,  10,  0.4, -0.4, FACTOR, SENSFACTOR, "red")
-car08 = car(canvas, 750, 300,  0.6, 0.6, FACTOR, SENSFACTOR, "olive")
-car09 = car(canvas, 110,  90,    0,   0, FACTOR, SENSFACTOR, "cyan")
-car10 = car(canvas, 120, 100,    1,   1, FACTOR, SENSFACTOR, "purple")
-car11 = car(canvas, 700, 300,  1.3, -1.3, FACTOR, SENSFACTOR, "gray")
-car12 = car(canvas, 200, 600,  1.3, 1.3, FACTOR, SENSFACTOR, "orange")
+### CONSTRUCT S
+car01 = Car(canvas, 140, 20,  0, 0, FACTOR, SENSFACTOR, "yellow")
+car02 = Car(canvas, 100, 200,  0.6, -0.6, FACTOR, SENSFACTOR, "green")
+car03 = Car(canvas, 110,  90,    0,   0, FACTOR, SENSFACTOR, "blue")
+car04 = Car(canvas, 180, 100,    1,   1, FACTOR, SENSFACTOR, "black")
+car05 = Car(canvas, 900, 400,  1.3, 1.3, FACTOR, SENSFACTOR, "pink")
+car06 = Car(canvas, 300, 500,  1.3, -1.3, FACTOR, SENSFACTOR, "brown")
+car07 = Car(canvas, 140,  10,  0.4, -0.4, FACTOR, SENSFACTOR, "red")
+car08 = Car(canvas, 750, 300,  0.6, 0.6, FACTOR, SENSFACTOR, "olive")
+car09 = Car(canvas, 110,  90,    0,   0, FACTOR, SENSFACTOR, "cyan")
+car10 = Car(canvas, 120, 100,    1,   1, FACTOR, SENSFACTOR, "purple")
+car11 = Car(canvas, 700, 300,  1.3, -1.3, FACTOR, SENSFACTOR, "gray")
+car12 = Car(canvas, 200, 600,  1.3, 1.3, FACTOR, SENSFACTOR, "orange")
   
 ### TESTS
 road_lsc = LineString(np.reshape(c_road.get_center_line(), (NPOINTS,2)))
