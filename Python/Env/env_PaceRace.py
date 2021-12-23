@@ -1,12 +1,12 @@
 import math
-from typing import Optional
-
+# from typing import Optional
 import numpy as np
 from scipy import integrate
 from matplotlib import pyplot as plt
-
+import road_car
 import gym
-from gym import spaces
+import tkinter as tk
+# from gym import spaces
 from gym.utils import seeding
 
 
@@ -46,6 +46,23 @@ class PaceRaceEnv(gym.Env):
         self.LR = LR
         self.MU = MU # Reibzahl, trockener Asphalt
         
+        #######################################################################
+        # initialize Car() object?
+        ### CONFIGURE ENVIRONMENT BASICS
+        self.win_env = tk.Tk() # parent window for the canvas
+        self.WIDTH = 1800
+        self.HEIGHT = 900
+        self.VISUALIZE = True
+        self.NPOINTS = 1000 # no of points of the central road line
+        self.ROADWIDTH = 8
+        self.FACTOR = 10 # resizing FACTOR, e.g. FAKTOR=10 => 10pixel==1m
+        self.SENSFACTOR = 1 # resizing factor for sensors 1 = standard
+        self.canvas = tk.Canvas(self.win_env, width= self.WIDTH, height= self.HEIGHT) # rendering area in GUI for s, theirs sensors and a road
+        self.canvas.pack() # ist required to visualize the canvas
+        self.button = tk.Button(self.win_env, text='enough', command = lambda:self.win_env.destroy()).pack(expand=True) # EXPERIMENTAL added button for closing GUI
+
+        #######################################################################        
+        
         # Numerical timestamp
         self.cycletime = CT
         self.t0 = 0
@@ -80,6 +97,9 @@ class PaceRaceEnv(gym.Env):
         self.max_omega = np.finfo(np.float32).max
         self.min_omega = np.finfo(np.float32).min
         
+        self.sensordata_min = 0
+        self.sensordata_max = 1
+        
         # Action Space
         self.low_action = np.array(
             [self.min_acceleration, self.min_steering_angle], dtype=np.float32
@@ -96,12 +116,14 @@ class PaceRaceEnv(gym.Env):
         self.low_state = np.array(
             [self.min_x_position, self.min_y_position, self.min_yaw_angle, \
              self.min_velocity_lon, self.min_velocity_lat, \
-                 self.min_omega], dtype=np.float32
+             self.min_omega, self.sensordata_min, self.sensordata_min, \
+             self.sensordata_min, self.sensordata_min, self.sensordata_min], dtype=np.float32
         )
         self.high_state = np.array(
             [self.max_x_position, self.max_y_position, self.max_yaw_angle, \
              self.max_velocity_lon, self.max_velocity_lat, \
-                 self.max_omega], dtype=np.float32
+             self.max_omega, self.sensordata_max, self.sensordata_max, \
+             self.sensordata_max, self.sensordata_max, self.sensordata_max], dtype=np.float32
         )
 
         self.observation_space = gym.spaces.Box(
@@ -131,13 +153,13 @@ class PaceRaceEnv(gym.Env):
             return dxdt, dydt, dpsidt, dvlondt, dvlatdt, domegadt 
 
         # Run one timestep of the environment's dynamics
-        x, y, psi, a, vlat, omega = self.state
+        # x, y, psi, a, vlat, omega = self.state # überflüssige Zeile
         res = integrate.solve_ivp(fun=model, t_span=(self.t0, self.t0+self.cycletime), \
                                   y0=np.array(self.state), args=[action], \
                                   t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10))
         self.state = np.array(res.y[0:6,-1], dtype=np.float32)    # UPDATE STATES
         self.t0 = self.t0+self.cycletime
-        
+               
         # return forces
         a, delta = action # unpack the action variables, because delta is needed
         omega_after_int = res.y[5,-1] # get current angle velocity
@@ -146,7 +168,10 @@ class PaceRaceEnv(gym.Env):
             F_ctfg = self.M * omega_after_int**2 * R # centrifugal force
         except ZeroDivisionError:
             F_ctfg = 0
-                   
+        
+        # set car to new position
+        self.car01.set_car_pos(self.state[0], self.state[1], self.state[2], delta) # inputs: x,y,psi,delta
+        
         # Convert a possible numpy bool to a Python bool
         done = bool(self.state[0] >= self.goal_position)
         done = False
@@ -154,17 +179,23 @@ class PaceRaceEnv(gym.Env):
         # Reward
         reward = 0
         
-        ## TODO: hier Kollisionsabfrage zwischen fzg u strecke abfragen
-        # get_sensor = FUNKTION_VON_ELISEO1 fragt Sensordaten ab
-        # collision_check = FUNKTION_VON_ELISEO2 gibt bool zurück
-        # if collision_check:
-        #     FUNKTION_VON_ELISEO3 setzt Pos. zurück auf Mittellinie
+        # get sensordata of a car
+        s1_rightborder, s1_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s01)
+        s3_rightborder, s3_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s03)
+        s5_rightborder, s5_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s05)
+        s7_rightborder, s7_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s07)
+        s9_rightborder, s9_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s09)
+        sensordata = [s1_leftborder, s1_rightborder, s3_leftborder, s3_rightborder, s5_leftborder, s5_rightborder, s7_leftborder, s7_rightborder, s9_leftborder, s9_rightborder]
         
-        ## TODO: hier F-Kritisch abfragen (aus der Kurve fliegen)
+        collision_check = self.road.collision_check(self.car01)
+        if collision_check:
+            self.car01.set_resume_pos(self.road.get_center_line(), self.road.get_right_line(), self.road.get_left_line())
+        
+        # check critical centrifugal force
         Fmax = self.M * 9.81 * self.MU # radius of traction circle
         Fres = math.sqrt((self.M * a)**2 + F_ctfg**2) # resulting force
         if Fres > Fmax:
-            # self.state[0:3] = FUNKTION_VON_ELISEO3 setzt Pos. zurück auf Mittellinie
+            self.car01.set_resume_pos(self.road.get_center_line(), self.road.get_right_line(), self.road.get_left_line())
             self.state[3:6] = 0, 0, 0 # set velocities and psi to zero
           
         
@@ -174,15 +205,26 @@ class PaceRaceEnv(gym.Env):
             reward = 100.0
             
         info = dict()
-        return np.array([self.state], dtype=np.float32).flatten(), reward, done, info
+        observation = np.concatenate([self.state, sensordata])
+        return np.array([observation], dtype=np.float32).flatten(), reward, done, info
+    
     
     # Current Version of gym
     # def reset(self, seed: Optional[int] = None):
     #     super().reset(seed=seed)
+    
     def reset(self): # FOR OLD VERSION OF GYM
+        ### CONSTRUCT ROAD
+        self.road = road_car.road(self.canvas,self.FACTOR,self.WIDTH,self.HEIGHT,self.NPOINTS, self.ROADWIDTH)
+        
+        ### CONSTRUCT S
+        self.car01 = road_car.Car(self.canvas, 140, 20,  0, 0, self.FACTOR, self.SENSFACTOR, "yellow")
+        # self.car02 = env_road_car.Car(self.canvas, 140, 20,  0, 0, self.FACTOR, self.SENSFACTOR, "red")
+        # etc.
+        
     # hier Streckeninitialisierung implementieren
-        self.road_slope = self.np_random.randint(low=-10, high=10)*self.np_random.random()
-        self.road_bias  = self.np_random.randint(low=-10, high=10)*self.np_random.random()
+        # self.road_slope = self.np_random.randint(low=-10, high=10)*self.np_random.random()
+        # self.road_bias  = self.np_random.randint(low=-10, high=10)*self.np_random.random()
         self.state = (0,self.road_bias,0,0,0,0)
         self.t0 = 0
         return np.array(self.state, dtype=np.float32)
