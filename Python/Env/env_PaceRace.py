@@ -61,6 +61,9 @@ class PaceRaceEnv(gym.Env):
         self.canvas.pack() # ist required to visualize the canvas
         self.button = tk.Button(self.win_env, text='enough', command = lambda:self.win_env.destroy()).pack(expand=True) # EXPERIMENTAL added button for closing GUI
 
+        self.car01 = road_car.Car(self.canvas, 140, 20,  0, 0, self.FACTOR, self.SENSFACTOR, "yellow")
+        # self.car02 = env_road_car.Car(self.canvas, 140, 20,  0, 0, self.FACTOR, self.SENSFACTOR, "red")
+        # etc.
         #######################################################################
 
         # Numerical timestamp
@@ -130,9 +133,6 @@ class PaceRaceEnv(gym.Env):
             low=self.low_state, high=self.high_state, dtype=np.float32
         )
 
-        # Finish-Line
-        self.goal_position = 10
-
         # FOR OLD VERSION OF GYM
         self.seed()
 
@@ -172,13 +172,6 @@ class PaceRaceEnv(gym.Env):
         # set car to new position
         self.car01.set_car_pos(self.state[0], self.state[1], self.state[2], delta) # inputs: x,y,psi,delta
 
-        # Convert a possible numpy bool to a Python bool
-        done = bool(self.state[0] >= self.goal_position)
-        done = False
-
-        # Reward
-        reward = 0
-
         # get sensordata of a car
         s1_rightborder, s1_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s01)
         s3_rightborder, s3_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s03)
@@ -198,40 +191,52 @@ class PaceRaceEnv(gym.Env):
             self.car01.set_resume_pos(self.road.get_center_line(), self.road.get_right_line(), self.road.get_left_line())
             self.state[3:6] = 0, 0, 0 # set velocities and psi to zero
 
+        # REWARD SECTION
+        # Convert a possible numpy bool to a Python bool
+        done = bool(self.road.get_path_length(self.car01) >= 0.99)
+        reward = 0 # reward wird in jedem step() ausgerechnet? Oder ist das eine Objektvariable, die kumuliert wird? -> Recherche!
 
         if not done:
+            # if self.road.get_path_length(self.car01)%0.1 == 0: # jede 10 Prozentpunkte ein Extra-Leckerli ...
+            #     reward += 10
             reward -= 1.0
         else:
-            reward = 100.0
+            reward = 1000.0
 
         info = dict()
         observation = np.concatenate([self.state, sensordata])
         return np.array([observation], dtype=np.float32).flatten(), reward, done, info
-
 
     # Current Version of gym
     # def reset(self, seed: Optional[int] = None):
     #     super().reset(seed=seed)
 
     def reset(self): # FOR OLD VERSION OF GYM
-        ### CONSTRUCT ROAD
+        ### CONSTRUCT NEW ROAD
         self.road = road_car.Road(self.canvas,self.FACTOR,self.WIDTH,self.HEIGHT,self.NPOINTS, self.ROADWIDTH)
 
-        ### CONSTRUCT S
-        self.car01 = road_car.Car(self.canvas, 140, 20,  0, 0, self.FACTOR, self.SENSFACTOR, "yellow")
-        # self.car02 = env_road_car.Car(self.canvas, 140, 20,  0, 0, self.FACTOR, self.SENSFACTOR, "red")
-        # etc.
+        ### SET BACK CAR TO START POSITION
+        self.car01.set_start_pos(self.road.get_center_line())
 
-    # hier Streckeninitialisierung implementieren
-        # self.road_slope = self.np_random.randint(low=-10, high=10)*self.np_random.random()
-        self.road_bias  = self.np_random.randint(low=-10, high=10)*self.np_random.random()
-        self.state = (0,self.road_bias,0,0,0,0)
+        x,y = self.canvas.coords(self.car01.car_center) # doesnt work currently
+        self.state = (x,y,0,0,0,0) # x,y,psi,vlon,vlat,omega
         self.t0 = 0
-        return np.array(self.state, dtype=np.float32)
+
+        # read sensordata
+        s1_rightborder, s1_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s01)
+        s3_rightborder, s3_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s03)
+        s5_rightborder, s5_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s05)
+        s7_rightborder, s7_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s07)
+        s9_rightborder, s9_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s09)
+        sensordata = [s1_leftborder, s1_rightborder, s3_leftborder, s3_rightborder, s5_leftborder, s5_rightborder, s7_leftborder, s7_rightborder, s9_leftborder, s9_rightborder]
+        observation = np.concatenate([self.state, sensordata])
+        return np.array([observation], dtype=np.float32)
 
     def render(self, mode='human'):
         pass
         # if mode == 'human':
+            # tkinter Visualisierung
+        # elif mode == '...'
         #     plt.scatter(self.state[0], self.state[1], s=20, marker='o', color='g')
 
     # Current Version of gym
