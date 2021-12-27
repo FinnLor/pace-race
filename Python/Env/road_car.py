@@ -769,7 +769,7 @@ if __name__ == "__main__":
     print("sensor 9, distance to RIGHT border: ", s9_rightborder)
     print("sensor 9, distance to LEFT border: ", s9_leftborder)
 
-    # collision test
+    # collision tests
     collision_car08 = road.collision_check(car08)
     print("collision or outside olive ", collision_car08)
 
