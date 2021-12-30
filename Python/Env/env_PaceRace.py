@@ -10,6 +10,11 @@ import tkinter as tk
 from gym.utils import seeding
 
 
+### alles in SI-Basiseinheiten
+## ToDo:    realistischen Default-Wert für JZ
+##          Quelle für MU und CF/CR
+
+
 class PaceRaceEnv(gym.Env):
     """
     Description:
@@ -35,7 +40,7 @@ class PaceRaceEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
 
 
-    def __init__(self, CF=0.7, CR=0.7, M=1, JZ=1, LF=1, LR=1, CT=0.1, MU=1.0):
+    def __init__(self, CF=0.7, CR=0.7, M=1, JZ=1, LF=2, LR=2, CT=0.1, MU=1.0):
 
         # Car-Design
         self.CF = CF
