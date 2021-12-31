@@ -129,11 +129,12 @@ class PaceRaceEnv(gym.Env):
         # unpacking and conversion
         P, delta_delta = action # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
+        # ERROR HERE: if vlon is very small, a becomes Inf! not fixable with try/except, because not continiuous!
         a = P/(self.car01.M*self.car01.vlon) # calculate feasable acceleceration
         
         # move car via dynamic model
-        states = [self.car01.x, self.car01.y, self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]
-        inputs = [a, delta]
+        states = np.concatenate(self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])) # states before moving
+        inputs = (a, delta) # must be a tuple
         self.car01.get_next_car_position(self.car01._car_dynamics, states, inputs) # calculate next car position with diff. eq.
 
         # calculate centrifugal force
@@ -143,9 +144,6 @@ class PaceRaceEnv(gym.Env):
             F_ctfg = self.M * omega_after_int**2 * R # centrifugal force
         except ZeroDivisionError:
             F_ctfg = 0
-
-        # set car to new position
-        self.car01.set_car_pos(self.car01.x, self.car01.y, self.car01.psi, delta) # inputs: x,y,psi,delta
 
         # get sensordata of a car
         sensdist = self.car01.get_sensordata(self.road, normalized=True)
@@ -177,7 +175,7 @@ class PaceRaceEnv(gym.Env):
             reward = 1000.0
 
         info = dict()
-        states = np.array([self.car01.x, self.car01.y, self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])
+        states = np.concatenate(self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])) # states after moving
         observation = np.concatenate([np.append(states,delta), sensdist])
         return np.array([observation], dtype=np.float32).flatten(), reward, done, info
 
@@ -201,9 +199,9 @@ class PaceRaceEnv(gym.Env):
         sensdist = self.car01.get_sensordata(self.road) # reads distances for each sensor in an array
         
         # pack up
-        states = np.array([self.car01.x, self.car01.y, self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])
+        states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])), axis=None)
         # append delta to states and concatenate the sensdist array to its end (compare with the setup/order of an 'observation' array, line 106)
-        observation = np.concatenate([np.append(states, self.car01.delta), sensdist]) 
+        observation = np.concatenate((np.append(states, self.car01.delta), sensdist), axis=None) 
         return np.array([observation], dtype=np.float32)
 
     def render(self, mode='human'):

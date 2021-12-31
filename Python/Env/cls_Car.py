@@ -114,10 +114,17 @@ class Car:
         self.LR = LR
         self.WIDTH  = WIDTH # car width
         self.SENS_SCALE = SENS_SCALE
+        self.M = M
+        
+        # Assign states
+        self.psi = psi # yaw angle
+        self.delta = delta # total steering angle
         
         # Set car position 
         self.set_car_pos(x, y, psi, delta)
                 
+        
+        
         
     def set_car_pos(self, x, y, psi, delta):
         """
@@ -158,6 +165,9 @@ class Car:
         
         # ... and position of sensor
         c4 = self.center + np.dot(rot_car, (1.5*self.LF, 0) )
+        
+        # update yaw angle
+        self.psi = psi
              
         # Summarize all vertices of car in an array and assign to object
         self.corners = np.vstack((c1,c2,c3,c4,c5))
@@ -462,25 +472,15 @@ class Car:
                                   y0=np.array(self.state), args=args, \
                                   t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10))
             
-        self.x = res.y[0,-1]
-        self.y = res.y[1,-1]
+        self.center = res.y[0:2,-1] # this is index 0 and 1
         self.psi = res.y[2,-1]
         self.vlon = res.y[3,-1]
         self.vlat = res.y[4,-1]
         self.omega = res.y[5,-1]
         
-        # self.state = np.array(res.y[0:6,-1], dtype=np.float32)    # UPDATE STATES
         self.t0 = self.t0+self.cycletime
-
-        # # # return forces
-        # omega_after_int = res.y[5,-1] # get current angle velocity
-        # try:
-        #     R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
-        #     F_ctfg = self.M * omega_after_int**2 * R # centrifugal force
-        # except ZeroDivisionError:
-        #     F_ctfg = 0
-        
-        new_states = [self.x, self.y, self.psi, self.vlon, self.vlat, self.omega]
+       
+        new_states = self.center + [self.psi, self.vlon, self.vlat, self.omega]
         
         return new_states
         
