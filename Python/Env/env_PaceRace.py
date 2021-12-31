@@ -190,20 +190,20 @@ class PaceRaceEnv(gym.Env):
         self.road = Road(ROADWIDTH=self.ROADWIDTH, NPOINTS = 1000)
 
         ### SET BACK CAR TO START POSITION
-        self.car01.set_start_pos(self.road.get_center_line())
+        self.car01.set_start_pos(self.road) # this sets x, y, psi and delta
+        self.car01.vlon = 0
+        self.car01.vlat = 0
+        self.car01.omega = 0
 
-        x,y = self.canvas.coords(self.car01.car_center) # doesnt work currently
-        self.state = (x,y,0,0,0,0) # x,y,psi,vlon,vlat,omega
         self.t0 = 0
 
         # read sensordata
-        s1_rightborder, s1_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s01)
-        s3_rightborder, s3_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s03)
-        s5_rightborder, s5_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s05)
-        s7_rightborder, s7_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s07)
-        s9_rightborder, s9_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s09)
-        sensordata = [s1_leftborder, s1_rightborder, s3_leftborder, s3_rightborder, s5_leftborder, s5_rightborder, s7_leftborder, s7_rightborder, s9_leftborder, s9_rightborder]
-        observation = np.concatenate([self.state, sensordata])
+        sensdist = self.car01.get_sensordata(self.road) # reads distances for each sensor in an array
+        
+        # pack up
+        states = np.array([self.car01.x, self.car01.y, self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])
+        # append delta to states and concatenate the sensdist array to its end (compare with the setup/order of an 'observation' array, line 106)
+        observation = np.concatenate([np.append(states, self.car01.delta), sensdist]) 
         return np.array([observation], dtype=np.float32)
 
     def render(self, mode='human'):
