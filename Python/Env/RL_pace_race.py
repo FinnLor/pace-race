@@ -56,6 +56,9 @@ print('Start training')
 model.learn(total_timesteps=config['total_timesteps'],
             callback=[eval_callback, checkpoint_callback])
 
+### Save Replay-Buffer
+model.save_replay_buffer('Replay_Buffer') # Logo of 1.000.000 timesteps
+
 ### PLOTTING
 plot_returns(env.get_episode_rewards(), filename=os.path.join('best', 'env_return_history.png'))
 
