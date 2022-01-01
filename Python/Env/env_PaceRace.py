@@ -130,12 +130,12 @@ class PaceRaceEnv(gym.Env):
         P, delta_delta = action # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
         # ERROR HERE: if vlon is very small, a becomes Inf! not fixable with try/except, because not continiuous!
-        a = P/(self.car01.M*self.car01.vlon) # calculate feasable acceleceration
+        a = min(P/(self.car01.M*self.car01.vlon), 9.81*self.MU) # calculate feasable acceleceration
         
         # move car via dynamic model
         states = np.concatenate(self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])) # states before moving
         inputs = (a, delta) # must be a tuple
-        self.car01.get_next_car_position(self.car01._car_dynamics, states, inputs) # calculate next car position with diff. eq.
+        self.car01.set_next_car_position(inputs) # calculate next car position with diff. eq.
 
         # calculate centrifugal force
         omega_after_int = self.car01.omega # get current angle velocity
@@ -145,9 +145,7 @@ class PaceRaceEnv(gym.Env):
         except ZeroDivisionError:
             F_ctfg = 0
 
-        # get sensordata of a car
-        sensdist = self.car01.get_sensordata(self.road, normalized=True)
-
+        # collision check
         collision_check = self.car01.collision_check(self.road)
         if collision_check:
             self.car01.set_resume_pos(self.road)
@@ -157,9 +155,6 @@ class PaceRaceEnv(gym.Env):
         Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force
         if Fres > Fmax:
             self.car01.set_resume_pos(self.road)
-            self.car01.vlon = 0
-            self.car01.vlat = 0
-            # self.state[3:6] = 0, 0, 0 # set velocities and psi to zero # old code, but why did we reset psi?
 
         ######################################################################
         # REWARD SECTION
@@ -173,6 +168,9 @@ class PaceRaceEnv(gym.Env):
             reward -= 1.0
         else:
             reward = 1000.0
+
+        # get sensordata of a car
+        sensdist = self.car01.get_sensordata(self.road, normalized=True)
 
         info = dict()
         states = np.concatenate(self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])) # states after moving
@@ -189,9 +187,7 @@ class PaceRaceEnv(gym.Env):
 
         ### SET BACK CAR TO START POSITION
         self.car01.set_start_pos(self.road) # this sets x, y, psi and delta
-        self.car01.vlon = 0
-        self.car01.vlat = 0
-        self.car01.omega = 0
+
 
         self.t0 = 0
 

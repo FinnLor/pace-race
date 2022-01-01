@@ -82,7 +82,7 @@ class Car:
         WIDTH : int or float, optional
             Width of car. Non-negative value. The default is 2.
         M : int or float, optional
-            Mass of car. Non-negative value. The default is 2_000.
+            Mass of car. Non-negative value. The default is 1_000.
         P : int or float, optional
             Power of car. Non-negative value. The default is 100_000.
         x : int or float, optional
@@ -115,15 +115,10 @@ class Car:
         self.WIDTH  = WIDTH # car width
         self.SENS_SCALE = SENS_SCALE
         self.M = M
-        
-        # Assign states
-        self.psi = psi # yaw angle
-        self.delta = delta # total steering angle
-        
+               
         # Set car position 
         self.set_car_pos(x, y, psi, delta)
-                
-        
+        # because env_PaceRace.reset() is called first, velocities and omega is already set        
         
         
     def set_car_pos(self, x, y, psi, delta):
@@ -166,8 +161,9 @@ class Car:
         # ... and position of sensor
         c4 = self.center + np.dot(rot_car, (1.5*self.LF, 0) )
         
-        # update yaw angle
+        # update yaw and steering angle
         self.psi = psi
+        self.delta = delta
              
         # Summarize all vertices of car in an array and assign to object
         self.corners = np.vstack((c1,c2,c3,c4,c5))
@@ -184,7 +180,7 @@ class Car:
         
         # Summarize all sensor end-points in an array and assign to object
         self.sensors = np.vstack((s01,s03,s05,s07,s09))
-        
+                
                 
     def set_start_pos(self, road):    
         """
@@ -213,7 +209,9 @@ class Car:
         dy = path[1, 1] - y
         psi = np.arctan2(dy, dx)
         self.set_car_pos(x, y, psi, 0) # x, y, psi, delta
-     
+        self.vlon = 0
+        self.vlat = 0
+        self.omega = 0
                   
     def set_resume_pos(self, road):  
         """
@@ -262,7 +260,9 @@ class Car:
         
         # Set car-position
         self.set_car_pos(resume_pos[0], resume_pos[1], psi, 0) # x, y, psi, delta
-
+        self.vlon = 0
+        self.vlat = 0
+        self.omega = 0
            
     def get_path_length(self, road, normalized = True): 
         """
@@ -444,8 +444,35 @@ class Car:
            
         return dist
 
-    def _car_dynamics(self, t, states, action):
-        a, delta, JZ = action # unpack input and parameter values
+    def _car_dynamics(self, t, states, inputs):
+        """
+        
+        Parameters
+        ----------
+        t : TYPE
+            DESCRIPTION.
+        states : TYPE
+            DESCRIPTION.
+        inputs : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        dxdt : TYPE
+            DESCRIPTION.
+        dydt : TYPE
+            DESCRIPTION.
+        dpsidt : TYPE
+            DESCRIPTION.
+        dvlondt : TYPE
+            DESCRIPTION.
+        dvlatdt : TYPE
+            DESCRIPTION.
+        domegadt : TYPE
+            DESCRIPTION.
+
+        """
+        a, delta, JZ = inputs # unpack input and parameter values
         x, y, psi, vlon, vlat, omega = states # unpack previous state values
 
         dxdt = vlon*math.cos(psi) - vlat*math.sin(psi)
@@ -457,8 +484,21 @@ class Car:
 
         return dxdt, dydt, dpsidt, dvlondt, dvlatdt, domegadt
 
-    def get_next_car_position(self, _car_dynamics, states, inputs):
+    def set_next_car_position(self, inputs):
+        """
 
+        Parameters
+        ----------
+        inputs : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+
+        states = np.concatenate(self.center, np.array([self.psi, self.vlon, self.vlat, self.omega]))
         a, delta = inputs # inputs contains power and TOTAL steering angle (is calculated in step())        
 
         try: # calculate rotational inertia
@@ -468,24 +508,18 @@ class Car:
             JZ = np.Inf
         
         args = np.array([a,delta,JZ]) # acceleration, total steering angle and rotational inertia are given to the model
-        res = integrate.solve_ivp(fun=_car_dynamics, t_span=(self.t0, self.t0+self.cycletime), \
-                                  y0=np.array(self.state), args=args, \
+        res = integrate.solve_ivp(fun=self._car_dynamics, t_span=(self.t0, self.t0+self.cycletime), \
+                                  y0=states, args=args, \
                                   t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10))
-            
-        self.center = res.y[0:2,-1] # this is index 0 and 1
-        self.psi = res.y[2,-1]
+        
+        self.set_car_pos(res.y[0,-1], res.y[1,-1], res.y[2,-1], delta) # arguments: x,y,psi,delta
         self.vlon = res.y[3,-1]
         self.vlat = res.y[4,-1]
         self.omega = res.y[5,-1]
         
         self.t0 = self.t0+self.cycletime
+               
        
-        new_states = self.center + [self.psi, self.vlon, self.vlat, self.omega]
-        
-        return new_states
-        
-    
-        
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
