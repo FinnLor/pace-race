@@ -36,7 +36,7 @@ class Car:
     """
     
     
-    def __init__(self, LF=2, LR=2, WIDTH=2, M=2_000, P=100_000,\
+    def __init__(self, LF=2, LR=2, WIDTH=2, M=1_000, P=100_000,\
                  x=0, y=0, psi=0, delta=0, SENS_SCALE=1):
         """
         
@@ -82,7 +82,7 @@ class Car:
         WIDTH : int or float, optional
             Width of car. Non-negative value. The default is 2.
         M : int or float, optional
-            Mass of car. Non-negative value. The default is 2_000.
+            Mass of car. Non-negative value. The default is 1_000.
         P : int or float, optional
             Power of car. Non-negative value. The default is 100_000.
         x : int or float, optional
@@ -114,10 +114,12 @@ class Car:
         self.LR = LR
         self.WIDTH  = WIDTH # car width
         self.SENS_SCALE = SENS_SCALE
-        
+        self.M = M
+               
         # Set car position 
         self.set_car_pos(x, y, psi, delta)
-                
+        # because env_PaceRace.reset() is called first, velocities and omega is already set        
+        
         
     def set_car_pos(self, x, y, psi, delta):
         """
@@ -158,23 +160,27 @@ class Car:
         
         # ... and position of sensor
         c4 = self.center + np.dot(rot_car, (1.5*self.LF, 0) )
+        
+        # update yaw and steering angle
+        self.psi = psi
+        self.delta = delta
              
         # Summarize all vertices of car in an array and assign to object
         self.corners = np.vstack((c1,c2,c3,c4,c5))
            
         # Set sensor end-points
-        s01 = c4 + np.dot(rot_car, (0, self.WIDTH) )
+        s01 = c4 + np.dot(rot_sensor, (0, self.WIDTH) )
         s03 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*15, self.WIDTH) )
         s05 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*60, 0) )
         s07 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*15, -self.WIDTH) )
-        s09 = c4 + np.dot(rot_car, (0, -self.WIDTH) )
+        s09 = c4 + np.dot(rot_sensor, (0, -self.WIDTH) )
         
         # Assign position of sensor to object
         self.s_ref = c4
         
         # Summarize all sensor end-points in an array and assign to object
         self.sensors = np.vstack((s01,s03,s05,s07,s09))
-        
+                
                 
     def set_start_pos(self, road):    
         """
@@ -203,7 +209,9 @@ class Car:
         dy = path[1, 1] - y
         psi = np.arctan2(dy, dx)
         self.set_car_pos(x, y, psi, 0) # x, y, psi, delta
-     
+        self.vlon = 0
+        self.vlat = 0
+        self.omega = 0
                   
     def set_resume_pos(self, road):  
         """
@@ -252,7 +260,9 @@ class Car:
         
         # Set car-position
         self.set_car_pos(resume_pos[0], resume_pos[1], psi, 0) # x, y, psi, delta
-
+        self.vlon = 0
+        self.vlat = 0
+        self.omega = 0
            
     def get_path_length(self, road, normalized = True): 
         """
@@ -434,44 +444,82 @@ class Car:
            
         return dist
 
-
-    def _car_dynamics(self, t, states, action):
-        a, delta = action
-        x, y, psi, vlon, vlat, omega = states
-        R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
-        JZ = self.M *R^2
-
-
-        # dxdt = vlon*math.cos(psi) - vlat*math.sin(psi)
-        # dydt = vlon*math.sin(psi) + vlat*math.cos(psi)
-        # dpsidt = omega
-        # dvlondt = a
-        # dvlatdt = -omega*vlon + 1/self.M* (-self.CR*math.atan2(vlat-omega*self.LR, vlon) -math.cos(delta)*self.CF*math.atan2(-vlon*math.sin(delta)+math.cos(delta)*vlat+math.cos(delta)*omega*self.LF, vlon*math.cos(delta)+math.sin(delta)*vlat+math.sin(delta)*omega*self.LF))
-        # domegadt = 1/self.JZ * (self.CR*self.LR*math.atan2(vlat-omega*self.LR, vlon) -self.CF*self.LF*math.atan2(-vlon*math.sin(delta)+math.cos(delta)*vlat+math.cos(delta)*omega*self.LF, vlon*math.cos(delta)+math.sin(delta)*vlat+math.sin(delta)*omega*self.LF))
-
-        pass #return dxdt, dydt, dpsidt, dvlondt, dvlatdt, domegadt
-
-    def get_next_car_position(self, obervations, action):
-        # # Run one timestep of the environment's dynamics
-        # res = integrate.solve_ivp(fun=model, t_span=(self.t0, self.t0+self.cycletime), \
-        #                           y0=np.array(self.state), args=[action], \
-        #                           t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10))
-        # self.state = np.array(res.y[0:6,-1], dtype=np.float32)    # UPDATE STATES
-        # self.t0 = self.t0+self.cycletime
-
-        # # return forces
-        # a, delta = action # unpack the action variables, because delta is needed
-        # omega_after_int = res.y[5,-1] # get current angle velocity
-        # try:
-        #     R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
-        #     F_ctfg = self.M * omega_after_int**2 * R # centrifugal force
-        # except ZeroDivisionError:
-        #     F_ctfg = 0
+    def _car_dynamics(self, t, states, inputs):
+        """
         
-        pass #return new_observation
+        Parameters
+        ----------
+        t : TYPE
+            DESCRIPTION.
+        states : TYPE
+            DESCRIPTION.
+        inputs : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        dxdt : TYPE
+            DESCRIPTION.
+        dydt : TYPE
+            DESCRIPTION.
+        dpsidt : TYPE
+            DESCRIPTION.
+        dvlondt : TYPE
+            DESCRIPTION.
+        dvlatdt : TYPE
+            DESCRIPTION.
+        domegadt : TYPE
+            DESCRIPTION.
+
+        """
+        a, delta, JZ = inputs # unpack input and parameter values
+        x, y, psi, vlon, vlat, omega = states # unpack previous state values
+
+        dxdt = vlon*math.cos(psi) - vlat*math.sin(psi)
+        dydt = vlon*math.sin(psi) + vlat*math.cos(psi)
+        dpsidt = omega
+        dvlondt = a
+        dvlatdt = -omega*vlon + 1/self.M* (-self.CR*math.atan2(vlat-omega*self.LR, vlon) -math.cos(delta)*self.CF*math.atan2(-vlon*math.sin(delta)+math.cos(delta)*vlat+math.cos(delta)*omega*self.LF, vlon*math.cos(delta)+math.sin(delta)*vlat+math.sin(delta)*omega*self.LF))
+        domegadt = 1/JZ * (self.CR*self.LR*math.atan2(vlat-omega*self.LR, vlon) -self.CF*self.LF*math.atan2(-vlon*math.sin(delta)+math.cos(delta)*vlat+math.cos(delta)*omega*self.LF, vlon*math.cos(delta)+math.sin(delta)*vlat+math.sin(delta)*omega*self.LF))
+
+        return dxdt, dydt, dpsidt, dvlondt, dvlatdt, domegadt
+
+    def set_next_car_position(self, inputs):
+        """
+
+        Parameters
+        ----------
+        inputs : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+
+        states = np.concatenate(self.center, np.array([self.psi, self.vlon, self.vlat, self.omega]))
+        a, delta = inputs # inputs contains power and TOTAL steering angle (is calculated in step())        
+
+        try: # calculate rotational inertia
+            R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
+            JZ = self.M *R^2
+        except ZeroDivisionError:
+            JZ = np.Inf
         
-    
+        args = np.array([a,delta,JZ]) # acceleration, total steering angle and rotational inertia are given to the model
+        res = integrate.solve_ivp(fun=self._car_dynamics, t_span=(self.t0, self.t0+self.cycletime), \
+                                  y0=states, args=args, \
+                                  t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10))
         
+        self.set_car_pos(res.y[0,-1], res.y[1,-1], res.y[2,-1], delta) # arguments: x,y,psi,delta
+        self.vlon = res.y[3,-1]
+        self.vlat = res.y[4,-1]
+        self.omega = res.y[5,-1]
+        
+        self.t0 = self.t0+self.cycletime
+               
+       
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
