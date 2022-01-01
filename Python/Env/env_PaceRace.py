@@ -1,13 +1,19 @@
 import math
 # from typing import Optional
 import numpy as np
-from scipy import integrate
+# from scipy import integrate
 from matplotlib import pyplot as plt
-import road_car
 import gym
-import tkinter as tk
+# import tkinter as tk
 # from gym import spaces
 from gym.utils import seeding
+from cls_Car import Car
+from cls_Road import Road
+
+
+### alles in SI-Basiseinheiten
+## ToDo:    realistischen Default-Wert für JZ
+##          Quelle für MU und CF/CR
 
 
 ### alles in SI-Basiseinheiten
@@ -40,43 +46,18 @@ class PaceRaceEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
 
 
-    def __init__(self, CF=0.7, CR=0.7, M=1, JZ=1, LF=2, LR=2, CT=0.1, MU=1.0):
+    def __init__(self, CF=0.7, CR=0.7, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
 
-        # Car-Design
-        self.CF = CF
-        self.CR = CR
-        self.M = M
-        self.JZ = JZ
-        self.LF = LF
-        self.LR = LR
+ 
         self.MU = MU # Reibzahl, trockener Asphalt
+        self.ROADWIDTH = ROADWIDTH
 
-        #######################################################################
-        # initialize Car() object?
-        ### CONFIGURE ENVIRONMENT BASICS
-        self.win_env = tk.Tk() # parent window for the canvas
-        self.WIDTH = 1800
-        self.HEIGHT = 900
-        self.VISUALIZE = True
-        self.NPOINTS = 1000 # no of points of the central road line
-        self.ROADWIDTH = 8
-        self.FACTOR = 10 # resizing FACTOR, e.g. FAKTOR=10 => 10pixel==1m
-        self.SENSFACTOR = 1 # resizing factor for sensors 1 = standard
-        self.canvas = tk.Canvas(self.win_env, width= self.WIDTH, height= self.HEIGHT) # rendering area in GUI for s, theirs sensors and a road
-        self.canvas.pack() # ist required to visualize the canvas
-        self.button = tk.Button(self.win_env, text='enough', command = lambda:self.win_env.destroy()).pack(expand=True) # EXPERIMENTAL added button for closing GUI
-
-        self.car01 = road_car.Car(self.canvas, 140, 20,  0, 0, self.FACTOR, self.SENSFACTOR, "yellow")
-        # self.car02 = env_road_car.Car(self.canvas, 140, 20,  0, 0, self.FACTOR, self.SENSFACTOR, "red")
-        # etc.
-        #######################################################################
+        self.car01 = Car(LF=LF, LR=LR, WIDTH=CAR_WIDTH, M=M, P=P,\
+                     x=0, y=0, psi=0, delta=0, SENS_SCALE=1)
 
         # Numerical timestamp
         self.cycletime = CT
         self.t0 = 0
-
-        # # Road
-        # self.road_path = lambda x,slope,bias : x*slope+bias
 
         # # Actions and Observations
         # SOLLTE NORMALISIERT WERDEN?
@@ -96,11 +77,17 @@ class PaceRaceEnv(gym.Env):
         self.max_velocity_lat = np.finfo(np.float32).max
         self.min_velocity_lat = np.finfo(np.float32).min
 
-        self.max_acceleration = np.finfo(np.float32).max
-        self.min_acceleration = np.finfo(np.float32).min
+        # self.max_acceleration = np.finfo(np.float32).max
+        # self.min_acceleration = np.finfo(np.float32).min
+        
+        self.max_power = P # for accelerating
+        self.min_power = -P # for decelerating
 
-        self.max_steering_angle = np.finfo(np.float32).max
-        self.min_steering_angle = np.finfo(np.float32).min
+        self.max_delta_steering_angle = np.finfo(np.float32).max
+        self.min_delta_steering_angle = np.finfo(np.float32).min
+        
+        self.max_total_steering_angle = np.finfo(np.float32).max
+        self.min_total_steering_angle = np.finfo(np.float32).min    
 
         self.max_omega = np.finfo(np.float32).max
         self.min_omega = np.finfo(np.float32).min
@@ -110,10 +97,10 @@ class PaceRaceEnv(gym.Env):
 
         # Action Space
         self.low_action = np.array(
-            [self.min_acceleration, self.min_steering_angle], dtype=np.float32
+            [self.min_power, self.min_delta_steering_angle], dtype=np.float32
         )
         self.high_action= np.array(
-            [self.max_acceleration, self.max_steering_angle], dtype=np.float32
+            [self.max_power, self.max_delta_steering_angle], dtype=np.float32
         )
 
         self.action_space = gym.spaces.Box(
@@ -121,6 +108,7 @@ class PaceRaceEnv(gym.Env):
         )
 
         # Observation Space
+        # observation: [x, y, psi, vlon, vlat, omega, total_steering_angle, sensor1, sensor3, sensor5, sensor7, sensor9]
         self.low_state = np.array(
             [self.min_x_position, self.min_y_position, self.min_yaw_angle, \
              self.min_velocity_lon, self.min_velocity_lat, \
@@ -143,59 +131,37 @@ class PaceRaceEnv(gym.Env):
 
     def step(self, action):
 
-        # Das gefällt mit nicht, dass das hier steht... /FL
-        def model(t, states, action):
-            a, delta = action
-            x, y, psi, vlon, vlat, omega = states
+        # unpacking and conversion
+        P, delta_delta = action # unpack RL action variables
+        delta = self.car01.delta + delta_delta # calculate new total steering angle
+        # ERROR HERE: if vlon is very small, a becomes Inf! not fixable with try/except, because not continiuous!
+        a = min(P/(self.car01.M*self.car01.vlon), 9.81*self.MU) # calculate feasable acceleceration
+        
+        # move car via dynamic model
+        states = np.concatenate(self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])) # states before moving
+        inputs = (a, delta) # must be a tuple
+        self.car01.set_next_car_position(inputs) # calculate next car position with diff. eq.
 
-            dxdt = vlon*math.cos(psi) - vlat*math.sin(psi)
-            dydt = vlon*math.sin(psi) + vlat*math.cos(psi)
-            dpsidt = omega
-            dvlondt = a
-            dvlatdt = -omega*vlon + 1/self.M* (-self.CR*math.atan2(vlat-omega*self.LR, vlon) -math.cos(delta)*self.CF*math.atan2(-vlon*math.sin(delta)+math.cos(delta)*vlat+math.cos(delta)*omega*self.LF, vlon*math.cos(delta)+math.sin(delta)*vlat+math.sin(delta)*omega*self.LF))
-            domegadt = 1/self.JZ * (self.CR*self.LR*math.atan2(vlat-omega*self.LR, vlon) -self.CF*self.LF*math.atan2(-vlon*math.sin(delta)+math.cos(delta)*vlat+math.cos(delta)*omega*self.LF, vlon*math.cos(delta)+math.sin(delta)*vlat+math.sin(delta)*omega*self.LF))
-
-            return dxdt, dydt, dpsidt, dvlondt, dvlatdt, domegadt
-
-        # Run one timestep of the environment's dynamics
-        # x, y, psi, a, vlat, omega = self.state # überflüssige Zeile
-        res = integrate.solve_ivp(fun=model, t_span=(self.t0, self.t0+self.cycletime), \
-                                  y0=np.array(self.state), args=[action], \
-                                  t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10))
-        self.state = np.array(res.y[0:6,-1], dtype=np.float32)    # UPDATE STATES
-        self.t0 = self.t0+self.cycletime
-
-        # return forces
-        a, delta = action # unpack the action variables, because delta is needed
-        omega_after_int = res.y[5,-1] # get current angle velocity
+        # calculate centrifugal force
+        omega_after_int = self.car01.omega # get current angle velocity
         try:
             R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
             F_ctfg = self.M * omega_after_int**2 * R # centrifugal force
         except ZeroDivisionError:
             F_ctfg = 0
 
-        # set car to new position
-        self.car01.set_car_pos(self.state[0], self.state[1], self.state[2], delta) # inputs: x,y,psi,delta
-
-        # get sensordata of a car
-        s1_rightborder, s1_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s01)
-        s3_rightborder, s3_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s03)
-        s5_rightborder, s5_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s05)
-        s7_rightborder, s7_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s07)
-        s9_rightborder, s9_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s09)
-        sensordata = [s1_leftborder, s1_rightborder, s3_leftborder, s3_rightborder, s5_leftborder, s5_rightborder, s7_leftborder, s7_rightborder, s9_leftborder, s9_rightborder]
-
-        collision_check = self.road.collision_check(self.car01)
+        # collision check
+        collision_check = self.car01.collision_check(self.road)
         if collision_check:
-            self.car01.set_resume_pos(self.road.get_center_line(), self.road.get_right_line(), self.road.get_left_line())
+            self.car01.set_resume_pos(self.road)
 
         # check critical centrifugal force
-        Fmax = self.M * 9.81 * self.MU # radius of traction circle
-        Fres = math.sqrt((self.M * a)**2 + F_ctfg**2) # resulting force
+        Fmax = self.car01.M * 9.81 * self.MU # radius of traction circle
+        Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force
         if Fres > Fmax:
-            self.car01.set_resume_pos(self.road.get_center_line(), self.road.get_right_line(), self.road.get_left_line())
-            self.state[3:6] = 0, 0, 0 # set velocities and psi to zero
+            self.car01.set_resume_pos(self.road)
 
+        ######################################################################
         # REWARD SECTION
         # Convert a possible numpy bool to a Python bool
         done = bool(self.road.get_path_length(self.car01) >= 0.99)
@@ -208,8 +174,12 @@ class PaceRaceEnv(gym.Env):
         else:
             reward = 1000.0
 
+        # get sensordata of a car
+        sensdist = self.car01.get_sensordata(self.road, normalized=True)
+
         info = dict()
-        observation = np.concatenate([self.state, sensordata])
+        states = np.concatenate(self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])) # states after moving
+        observation = np.concatenate([np.append(states,delta), sensdist])
         return np.array([observation], dtype=np.float32).flatten(), reward, done, info
 
     # Current Version of gym
@@ -218,23 +188,21 @@ class PaceRaceEnv(gym.Env):
 
     def reset(self): # FOR OLD VERSION OF GYM
         ### CONSTRUCT NEW ROAD
-        self.road = road_car.Road(self.canvas,self.FACTOR,self.WIDTH,self.HEIGHT,self.NPOINTS, self.ROADWIDTH)
+        self.road = Road(ROADWIDTH=self.ROADWIDTH, NPOINTS = 1000)
 
         ### SET BACK CAR TO START POSITION
-        self.car01.set_start_pos(self.road.get_center_line())
+        self.car01.set_start_pos(self.road) # this sets x, y, psi and delta
 
-        x,y = self.canvas.coords(self.car01.car_center) # doesnt work currently
-        self.state = (x,y,0,0,0,0) # x,y,psi,vlon,vlat,omega
+
         self.t0 = 0
 
         # read sensordata
-        s1_rightborder, s1_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s01)
-        s3_rightborder, s3_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s03)
-        s5_rightborder, s5_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s05)
-        s7_rightborder, s7_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s07)
-        s9_rightborder, s9_leftborder = self.road.get_sensordata(self.car01.c4, self.car01.s09)
-        sensordata = [s1_leftborder, s1_rightborder, s3_leftborder, s3_rightborder, s5_leftborder, s5_rightborder, s7_leftborder, s7_rightborder, s9_leftborder, s9_rightborder]
-        observation = np.concatenate([self.state, sensordata])
+        sensdist = self.car01.get_sensordata(self.road) # reads distances for each sensor in an array
+        
+        # pack up
+        states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])), axis=None)
+        # append delta to states and concatenate the sensdist array to its end (compare with the setup/order of an 'observation' array, line 106)
+        observation = np.concatenate((np.append(states, self.car01.delta), sensdist), axis=None) 
         return np.array([observation], dtype=np.float32)
 
     def render(self, mode='human'):
