@@ -9,7 +9,7 @@ from shapely.geometry import LineString, Point
 import math as m
 import numpy as np
 import random as rnd
-#from scipy.interpolate import interp1d # Needed for alternative idea to generate the road.
+from scipy.interpolate import interp1d # Needed for alternative idea to generate the road.
 
 
 class Road:
@@ -67,16 +67,16 @@ class Road:
         self.ROADWIDTH = ROADWIDTH
     
         # Build parametric function of road-centerline in x,y,n-system
-        n = np.linspace(0.5, 2*m.pi, NPOINTS)
-        x = m.pow((-1), rnd.randrange(1,3,1)) * (n + 3*rnd.uniform(0,1)*np.tan(0.2*n)) *100
-        y = (1./n + rnd.uniform(0,1)*3.*np.cos(n)*np.power(np.sin(n),2)) *100
+        # n = np.linspace(0.5, 2*m.pi, NPOINTS)
+        # x = m.pow((-1), rnd.randrange(1,3,1)) * (n + 3*rnd.uniform(0,1)*np.tan(0.2*n)) *100
+        # y = (1./n + rnd.uniform(0,1)*3.*np.cos(n)*np.power(np.sin(n),2)) *100
         
         # Alternative idea that allows more diversity.
-        # x = np.cumsum(np.random.rand(10)+0.3)*100
-        # y = np.cumsum((np.random.rand(10)-0.5)*2)*100
-        # f = interp1d(x, y, kind='quadratic')
-        # x = np.linspace(x[0], x[9], NPOINTS)
-        # y = f(x)
+        x = np.cumsum(np.random.rand(10)+0.3)*100
+        y = np.cumsum((np.random.rand(10)-0.5)*2)*100
+        f = interp1d(x, y, kind='quadratic')
+        x = np.linspace(x[0], x[9], NPOINTS)
+        y = f(x)
         
         # Generate lane centerline and lane boundaries.
         line_data = np.transpose([x,y])

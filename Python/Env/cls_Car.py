@@ -181,7 +181,6 @@ class Car:
         # Summarize all sensor end-points in an array and assign to object
         self.sensors = np.vstack((s01,s03,s05,s07,s09))
                 
-                
     def set_start_pos(self, road):    
         """
         

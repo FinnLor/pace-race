@@ -16,6 +16,11 @@ from cls_Road import Road
 ##          Quelle für MU und CF/CR
 
 
+### alles in SI-Basiseinheiten
+## ToDo:    realistischen Default-Wert für JZ
+##          Quelle für MU und CF/CR
+
+
 class PaceRaceEnv(gym.Env):
     """
     Description:
