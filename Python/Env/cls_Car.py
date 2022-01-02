@@ -79,6 +79,10 @@ class Car:
             Distance from center to front wheel. Non-negative value. The default is 2.
         LR : int or float, optional
             Distance form center to rear wheel. Non-negative value. The default is 2.
+        CF : int or float, optional 
+            Cornering stiffness front wheel. Non-negative value. The default is 0.7.
+        CR : int or float, optional
+            Cornering stiffness rear wheel. Non-negative value. The default is 0.7.
         WIDTH : int or float, optional
             Width of car. Non-negative value. The default is 2.
         M : int or float, optional
@@ -94,9 +98,9 @@ class Car:
         delta : int or float, optional
             DESCRIPTION. The default is 0.
         SENS_SCALE : int or float, optional
-            Steering angle. The default is 1.
+            Steering angle. Non-negative value. The default is 1.
         CT : int or float, optional
-            Timestep for numerical integration. The default is 0.1.
+            Timestep for numerical integration. Non-negative value. The default is 0.1.
 
         Returns
         -------
@@ -107,14 +111,18 @@ class Car:
         # Check inputs
         assert LF >= 0 , "LF has to be non-negative!"
         assert LR >= 0 , "LR has to be non-negative!"
+        assert CF >= 0 , "CF has to be non-negative!"
+        assert CR >= 0 , "CR has to be non-negative!"
         assert WIDTH >= 0 , "WIDTH has to be non-negative!"
         assert M >= 0 , "M has to be non-negative!"
         assert P >= 0 , "P has to be non-negative!"
+        assert SENS_SCALE >= 0 , "SENS_SCALE has to be non-negative!"
+        assert CT >= 0 , "CT has to be non-negative!"
         
-        # Assign geometric Properties
+        # Assign properties of car
         self.LF = LF
         self.LR = LR
-        self.WIDTH  = WIDTH # car width
+        self.WIDTH  = WIDTH
         self.SENS_SCALE = SENS_SCALE
         self.M = M
         self.CF = CF

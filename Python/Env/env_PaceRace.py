@@ -163,7 +163,7 @@ class PaceRaceEnv(gym.Env):
         ######################################################################
         # REWARD SECTION
         # Convert a possible numpy bool to a Python bool
-        done = bool(self.road.get_path_length(self.car01) >= 0.99)
+        done = bool(self.car01.get_path_length(self.road) >= 0.99)
         reward = 0 # reward wird in jedem step() ausgerechnet? Oder ist das eine Objektvariable, die kumuliert wird? -> Recherche!
 
         if not done:
@@ -177,8 +177,8 @@ class PaceRaceEnv(gym.Env):
         sensdist = self.car01.get_sensordata(self.road, normalized=True)
 
         info = dict()
-        states = np.concatenate(self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])) # states after moving
-        observation = np.concatenate([np.append(states,delta), sensdist])
+        states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]))) # states after moving
+        observation = np.concatenate((states, np.min(sensdist, axis = 1)), axis=None)
         return np.array([observation], dtype=np.float32).flatten(), reward, done, info
 
     # Current Version of gym
