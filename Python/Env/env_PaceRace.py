@@ -52,7 +52,7 @@ class PaceRaceEnv(gym.Env):
         self.MU = MU # Reibzahl, trockener Asphalt
         self.ROADWIDTH = ROADWIDTH
 
-        self.car01 = Car(LF=LF, LR=LR, WIDTH=CAR_WIDTH, M=M, P=P,\
+        self.car01 = Car(LF=LF, LR=LR, CF=CF, CR=CR, WIDTH=CAR_WIDTH, M=M, P=P,\
                      x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=CT)
 
 
@@ -144,8 +144,8 @@ class PaceRaceEnv(gym.Env):
         # calculate centrifugal force
         omega_after_int = self.car01.omega # get current angle velocity
         try:
-            R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
-            F_ctfg = self.M * omega_after_int**2 * R # centrifugal force
+            R = (self.car01.LF+self.car01.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.car01.LR/(self.car01.LF+self.car01.LR)))
+            F_ctfg = self.car01.M * omega_after_int**2 * R # centrifugal force
         except ZeroDivisionError:
             F_ctfg = 0
 
