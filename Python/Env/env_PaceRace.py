@@ -53,15 +53,14 @@ class PaceRaceEnv(gym.Env):
         self.ROADWIDTH = ROADWIDTH
 
         self.car01 = Car(LF=LF, LR=LR, WIDTH=CAR_WIDTH, M=M, P=P,\
-                     x=0, y=0, psi=0, delta=0, SENS_SCALE=1)
+                     x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=CT)
 
-        # Numerical timestamp
-        self.cycletime = CT
-        self.t0 = 0
 
         # # Actions and Observations
-        # SOLLTE NORMALISIERT WERDEN?
+        # SOLLTE NORMALISIERT WERDEN? 
 
+
+        #### Reicht es diese Variablen lokal anzulegen? /FL
         self.max_x_position = np.finfo(np.float32).max
         self.min_x_position = np.finfo(np.float32).min
 
@@ -138,7 +137,7 @@ class PaceRaceEnv(gym.Env):
         a = min(P/(self.car01.M*self.car01.vlon), 9.81*self.MU) # calculate feasable acceleceration
         
         # move car via dynamic model
-        states = np.concatenate(self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])) # states before moving
+        states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]))) # states before moving
         inputs = (a, delta) # must be a tuple
         self.car01.set_next_car_position(inputs) # calculate next car position with diff. eq.
 
@@ -202,8 +201,9 @@ class PaceRaceEnv(gym.Env):
         # pack up
         states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])), axis=None)
         # append delta to states and concatenate the sensdist array to its end (compare with the setup/order of an 'observation' array, line 106)
-        observation = np.concatenate((np.append(states, self.car01.delta), sensdist), axis=None) 
-        return np.array([observation], dtype=np.float32)
+        # observation = np.concatenate((np.append(states, self.car01.delta), sensdist), axis=None) 
+        observation = np.concatenate((states, np.min(sensdist, axis = 1)), axis=None) 
+        return np.array([observation], dtype=np.float32).flatten()
 
     def render(self, mode='human'):
         pass
