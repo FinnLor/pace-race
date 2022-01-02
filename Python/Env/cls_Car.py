@@ -36,7 +36,7 @@ class Car:
     """
     
     
-    def __init__(self, LF=2, LR=2, WIDTH=2, M=1_000, P=100_000,\
+    def __init__(self, LF=2, LR=2, CF=0.7, CR=0.7, WIDTH=2, M=1_000, P=100_000,\
                  x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=0.1):
         """
         
@@ -117,6 +117,8 @@ class Car:
         self.WIDTH  = WIDTH # car width
         self.SENS_SCALE = SENS_SCALE
         self.M = M
+        self.CF = CF
+        self.CR = CR
                
         # Set car position 
         self.set_car_pos(x, y, psi, delta)
@@ -514,10 +516,10 @@ class Car:
         except ZeroDivisionError:
             JZ = np.Inf
         
-        args = np.array([a,delta,JZ]) # acceleration, total steering angle and rotational inertia are given to the model
+        args = (a,delta,JZ) # acceleration, total steering angle and rotational inertia are given to the model
         res = integrate.solve_ivp(fun=self._car_dynamics, t_span=(self.t0, self.t0+self.cycletime), \
-                                  y0=states, args=args, \
-                                  t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10))
+                                  y0=states, args=[args], \
+                                  t_eval=None) # old: t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10) --> caused a bug
         
         self.set_car_pos(res.y[0,-1], res.y[1,-1], res.y[2,-1], delta) # arguments: x,y,psi,delta
         self.vlon = res.y[3,-1]
