@@ -37,7 +37,7 @@ class Car:
     
     
     def __init__(self, LF=2, LR=2, WIDTH=2, M=1_000, P=100_000,\
-                 x=0, y=0, psi=0, delta=0, SENS_SCALE=1):
+                 x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=0.1):
         """
         
         Initializes object.
@@ -95,6 +95,8 @@ class Car:
             DESCRIPTION. The default is 0.
         SENS_SCALE : int or float, optional
             Steering angle. The default is 1.
+        CT : int or float, optional
+            Timestep for numerical integration. The default is 0.1.
 
         Returns
         -------
@@ -119,6 +121,10 @@ class Car:
         # Set car position 
         self.set_car_pos(x, y, psi, delta)
         # because env_PaceRace.reset() is called first, velocities and omega is already set        
+        
+        # Numerical timestamp
+        self.cycletime = CT
+        self.t0 = 0
         
         
     def set_car_pos(self, x, y, psi, delta):
@@ -443,6 +449,7 @@ class Car:
            
         return dist
 
+
     def _car_dynamics(self, t, states, inputs):
         """
         
@@ -483,6 +490,7 @@ class Car:
 
         return dxdt, dydt, dpsidt, dvlondt, dvlatdt, domegadt
 
+
     def set_next_car_position(self, inputs):
         """
 
@@ -497,12 +505,12 @@ class Car:
 
         """
 
-        states = np.concatenate(self.center, np.array([self.psi, self.vlon, self.vlat, self.omega]))
+        states = np.concatenate((self.center, np.array([self.psi, self.vlon, self.vlat, self.omega])))
         a, delta = inputs # inputs contains power and TOTAL steering angle (is calculated in step())        
 
         try: # calculate rotational inertia
             R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
-            JZ = self.M *R^2
+            JZ = self.M *R**2
         except ZeroDivisionError:
             JZ = np.Inf
         
