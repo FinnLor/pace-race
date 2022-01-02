@@ -134,7 +134,15 @@ class PaceRaceEnv(gym.Env):
         P, delta_delta = action # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
         # ERROR HERE: if vlon is very small, a becomes Inf! not fixable with try/except, because not continiuous!
-        a = min(P/(self.car01.M*self.car01.vlon), 9.81*self.MU) # calculate feasable acceleceration
+        # calculate feasable acceleceration
+        if self.car01.vlon == 0:
+            a = 9.81*self.MU
+        elif P>=0:
+            a = min(P/(self.car01.M*self.car01.vlon), 9.81*self.MU) 
+        elif P<0:
+            a = max(P/(self.car01.M*self.car01.vlon), -9.81*self.MU) 
+        else:
+            print('Error in calculation of acceleration.')
         
         # move car via dynamic model
         states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]))) # states before moving
@@ -143,7 +151,7 @@ class PaceRaceEnv(gym.Env):
 
         # calculate centrifugal force
         omega_after_int = self.car01.omega # get current angle velocity
-        try:
+        try: ### Works WITHOUT numpy only!!! ################# /FL
             R = (self.car01.LF+self.car01.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.car01.LR/(self.car01.LF+self.car01.LR)))
             F_ctfg = self.car01.M * omega_after_int**2 * R # centrifugal force
         except ZeroDivisionError:
