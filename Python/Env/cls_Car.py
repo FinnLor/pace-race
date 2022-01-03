@@ -36,7 +36,7 @@ class Car:
     """
     
     
-    def __init__(self, LF=2, LR=2, CF=0.7, CR=0.7, WIDTH=2, M=1_000, P=100_000,\
+    def __init__(self, LF=2, LR=2, CF=49_000, CR=49_000, WIDTH=2, M=1_000, P=100_000,\
                  x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=0.1):
         """
         
@@ -80,9 +80,9 @@ class Car:
         LR : int or float, optional
             Distance form center to rear wheel. Non-negative value. The default is 2.
         CF : int or float, optional 
-            Cornering stiffness front wheel. Non-negative value. The default is 0.7.
+            Cornering stiffness front wheel. Non-negative value. The default is 49_000.
         CR : int or float, optional
-            Cornering stiffness rear wheel. Non-negative value. The default is 0.7.
+            Cornering stiffness rear wheel. Non-negative value. The default is 49_000.
         WIDTH : int or float, optional
             Width of car. Non-negative value. The default is 2.
         M : int or float, optional
@@ -521,12 +521,11 @@ class Car:
         a, delta = inputs # inputs contains acc and TOTAL steering angle (is calculated in step())        
 
         try: # calculate rotational inertia
-            R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
+            R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan2(math.tan(delta) * self.LR,(self.LF+self.LR)))
+            # R = float(self.vlon)/float(self.omega) # cast because numpy types do not throw exceptions
             JZ = self.M *R**2
         except ZeroDivisionError:
             JZ = np.Inf
-        JZ = 1
-        print("JZ IS =1!!! DEBUGGING MODE!!!")
         
         args = (a,delta,JZ) # acceleration, total steering angle and rotational inertia are given to the model
         res = integrate.solve_ivp(fun=self._car_dynamics, t_span=(self.t0, self.t0+self.cycletime), \

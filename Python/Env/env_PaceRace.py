@@ -46,7 +46,7 @@ class PaceRaceEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
 
 
-    def __init__(self, CF=0.7, CR=0.7, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
+    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
 
  
         self.MU = MU # Reibzahl, trockener Asphalt
@@ -151,12 +151,16 @@ class PaceRaceEnv(gym.Env):
         self.car01.set_next_car_position(inputs) # calculate next car position with diff. eq.
 
         # calculate centrifugal force
-        omega_after_int = self.car01.omega # get current angle velocity
         try: ### Works WITHOUT numpy only!!! ################# /FL
-            R = (self.car01.LF+self.car01.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.car01.LR/(self.car01.LF+self.car01.LR)))
-            F_ctfg = self.car01.M * omega_after_int**2 * R # centrifugal force
+            R = (self.car01.LF+self.car01.LR)/math.tan(delta) * 1/(math.atan2(math.tan(delta) * self.car01.LR,(self.car01.LF+self.car01.LR)))
+            # R = self.car01.vlon/self.car01.omega
+            F_ctfg = self.car01.M * self.car01.omega**2 * R # centrifugal force (alternative formulation)
+            # print(F_ctfg)
+            # F_ctfg = self.car01.omega * self.car01.vlon * self.car01.M # WHY DOES THIS NOT WORK?
+            # print(F_ctfg)
         except ZeroDivisionError:
             F_ctfg = 0
+
 
         # collision check
         collision_check = self.car01.collision_check(self.road)
@@ -169,7 +173,9 @@ class PaceRaceEnv(gym.Env):
         Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
         if Fres > Fmax:
             print("Haftkraft überschritten!")
-            # self.car01.set_resume_pos(self.road)
+            # self.car01.set_resume_pos(self.road) # probably reset() would be a better penalty
+        else:
+            print("Haftkraft: -- OK --")
 
         ######################################################################
         # REWARD SECTION
@@ -240,7 +246,7 @@ class PaceRaceEnv(gym.Env):
 
 if __name__ == '__main__':
     
-    g = PaceRaceEnv(CT=0.1, ROADWIDTH=300)
+    g = PaceRaceEnv(CF=49_000, CR=49_000, CT=0.1, ROADWIDTH=30)
     g.reset()
     action = np.array([[50_000, 0.0],
                        [50_000, 0.0],
