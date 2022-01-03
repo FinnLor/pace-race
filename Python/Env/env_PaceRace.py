@@ -48,7 +48,7 @@ class PaceRaceEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
 
 
-    def __init__(self, CF=0.7, CR=0.7, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
+    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
 
  
         self.MU = MU # Reibzahl, trockener Asphalt
@@ -135,6 +135,7 @@ class PaceRaceEnv(gym.Env):
         # unpacking and conversion
         P, delta_delta = action # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
+
         # ERROR HERE: if vlon is very small, a becomes Inf! not fixable with try/except, because not continiuous!
         # calculate feasable acceleceration
         if self.car01.vlon == 0:
@@ -152,23 +153,31 @@ class PaceRaceEnv(gym.Env):
         self.car01.set_next_car_position(inputs) # calculate next car position with diff. eq.
 
         # calculate centrifugal force
-        omega_after_int = self.car01.omega # get current angle velocity
         try: ### Works WITHOUT numpy only!!! ################# /FL
-            R = (self.car01.LF+self.car01.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.car01.LR/(self.car01.LF+self.car01.LR)))
-            F_ctfg = self.car01.M * omega_after_int**2 * R # centrifugal force
+            R = (self.car01.LF+self.car01.LR)/math.tan(delta) * 1/(math.atan2(math.tan(delta) * self.car01.LR,(self.car01.LF+self.car01.LR)))
+            # R = self.car01.vlon/self.car01.omega
+            F_ctfg = self.car01.M * self.car01.omega**2 * R # centrifugal force (alternative formulation)
+            # print(F_ctfg)
+            # F_ctfg = self.car01.omega * self.car01.vlon * self.car01.M # WHY DOES THIS NOT WORK?
+            # print(F_ctfg)
         except ZeroDivisionError:
             F_ctfg = 0
+
 
         # collision check
         collision_check = self.car01.collision_check(self.road)
         if collision_check:
             self.car01.set_resume_pos(self.road)
+            print("CAR CRASH!!!")
 
         # check critical centrifugal force
         Fmax = self.car01.M * 9.81 * self.MU # radius of traction circle
-        Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force
+        Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
         if Fres > Fmax:
-            self.car01.set_resume_pos(self.road)
+            print("Haftkraft überschritten!")
+            # self.car01.set_resume_pos(self.road) # probably reset() would be a better penalty
+        else:
+            print("Haftkraft: -- OK --")
 
         ######################################################################
         # REWARD SECTION
@@ -331,8 +340,10 @@ class PaceRaceEnv(gym.Env):
 
 
 if __name__ == '__main__':
-    g = PaceRaceEnv()
+    
+    g = PaceRaceEnv(CF=49_000, CR=49_000, CT=0.1, ROADWIDTH=30)
     g.reset()
+
     
     render_gui = tk.Tk() # parent window for canvas
     CANVAS_WIDTH = 1800
@@ -357,3 +368,113 @@ if __name__ == '__main__':
     
     
     
+
+    action = np.array([[50_000, 0.0],
+                       [50_000, 0.0],
+                       [50_000, 0.0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, -np.pi/16],
+                       [50_000, -np.pi/16],
+                       [50_000, -np.pi/16],
+                       [50_000, -np.pi/16],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0]])
+    
+    # Get data from road
+    x_center_line = np.array(g.road.center_line.coords)[:,0] 
+    y_center_line = np.array(g.road.center_line.coords)[:,1] 
+    x_left_line = np.array(g.road.left_line.coords)[:,0] 
+    y_left_line = np.array(g.road.left_line.coords)[:,1] 
+    x_right_line = np.array(g.road.right_line.coords)[:,0] 
+    y_right_line = np.array(g.road.right_line.coords)[:,1] 
+    # Visualize Road
+    fig4, ax4 = plt.subplots()
+    ax4.plot(x_center_line, y_center_line, label='center_line')
+    ax4.plot(x_left_line, y_left_line, label = 'left_line')
+    ax4.plot(x_right_line, y_right_line, label = 'right_line')
+    delta = 0
+    c = 0
+    for i in action:
+        c +=1
+        print(20*"-")
+        print(f"Iteration {c}")
+        # Add car1 to current figure
+        ax4.scatter(g.car01.center[0], g.car01.center[1], label = 'car1_center')
+        #ax4.scatter(g.car01.corners[:,0], g.car01.corners[:,1], label = 'car1_corners')
+        #ax4.scatter(g.car01.sensors[:,0], g.car01.sensors[:,1], label = 'car1_sensors')
+        #ax4.legend()
+        fig4.suptitle('Road and car1 on start-position')
+        obs, reward, done, info = g.step(i)
+        print(f"delta: {g.car01.delta}")
+        print(f"psi: {g.car01.psi}")
+        print(f"vlon: {g.car01.vlon}")
+        print(f"vlat: {g.car01.vlat}")
+        
+    
+    # g.render(mode='human')
+    # for i in range(50):
+    #     g.step((0, 0))
+    #     g.render(mode='human')
+    # plt.show()
+
