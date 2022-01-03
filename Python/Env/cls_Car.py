@@ -36,7 +36,7 @@ class Car:
     """
     
     
-    def __init__(self, LF=2, LR=2, CF=0.7, CR=0.7, WIDTH=2, M=1_000, P=100_000,\
+    def __init__(self, LF=2, LR=2, CF=49_000, CR=49_000, WIDTH=2, M=1_000, P=100_000,\
                  x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=0.1):
         """
         
@@ -80,9 +80,9 @@ class Car:
         LR : int or float, optional
             Distance form center to rear wheel. Non-negative value. The default is 2.
         CF : int or float, optional 
-            Cornering stiffness front wheel. Non-negative value. The default is 0.7.
+            Cornering stiffness front wheel. Non-negative value. The default is 49_000.
         CR : int or float, optional
-            Cornering stiffness rear wheel. Non-negative value. The default is 0.7.
+            Cornering stiffness rear wheel. Non-negative value. The default is 49_000.
         WIDTH : int or float, optional
             Width of car. Non-negative value. The default is 2.
         M : int or float, optional
@@ -180,7 +180,7 @@ class Car:
         # update yaw and steering angle
         self.psi = psi
         self.delta = delta
-             
+
         # Summarize all vertices of car in an array and assign to object
         self.corners = np.vstack((c1,c2,c3,c4,c5))
            
@@ -345,8 +345,8 @@ class Car:
         # Extrapolate the boundaries linearly at the starting point of the road.
         ds_left = left_line_coords[[0],:]-left_line_coords[[1],:]
         ds_right = right_line_coords[[-1],:]-right_line_coords[[-2],:]
-        extrapolation_start_left_line = left_line_coords[[0],:]+ds_left/np.linalg.norm(ds_left)*self.LR*1.1
-        extrapolation_start_right_line = right_line_coords[[-1],:]+ds_right/np.linalg.norm(ds_right)*self.LR*1.1
+        extrapolation_start_left_line = left_line_coords[[0],:]+ds_left/np.linalg.norm(ds_left)*self.LR*1.5
+        extrapolation_start_right_line = right_line_coords[[-1],:]+ds_right/np.linalg.norm(ds_right)*self.LR*1.5
         
         # Extrapolate the boundaries linearly at the end point of the road.
         ds_left = left_line_coords[[-1],:]-left_line_coords[[-2],:]
@@ -367,7 +367,7 @@ class Car:
         car_polygon = Polygon(self.corners)
         
         # Check if the intersection area is 1.
-        collision = car_polygon.intersection(extended_road_polygon).area != car_polygon.area
+        collision = abs(car_polygon.intersection(extended_road_polygon).area - car_polygon.area) > 0.001
         
         ###  For debugging. Please don't delete yet.
         # fig99, ax99 = plt.subplots()
@@ -491,12 +491,14 @@ class Car:
         a, delta, JZ = inputs # unpack input and parameter values
         x, y, psi, vlon, vlat, omega = states # unpack previous state values
 
-        dxdt = vlon*math.cos(psi) - vlat*math.sin(psi)
-        dydt = vlon*math.sin(psi) + vlat*math.cos(psi)
+
+
         dpsidt = omega
         dvlondt = a
         dvlatdt = -omega*vlon + 1/self.M* (-self.CR*math.atan2(vlat-omega*self.LR, vlon) -math.cos(delta)*self.CF*math.atan2(-vlon*math.sin(delta)+math.cos(delta)*vlat+math.cos(delta)*omega*self.LF, vlon*math.cos(delta)+math.sin(delta)*vlat+math.sin(delta)*omega*self.LF))
         domegadt = 1/JZ * (self.CR*self.LR*math.atan2(vlat-omega*self.LR, vlon) -self.CF*self.LF*math.atan2(-vlon*math.sin(delta)+math.cos(delta)*vlat+math.cos(delta)*omega*self.LF, vlon*math.cos(delta)+math.sin(delta)*vlat+math.sin(delta)*omega*self.LF))
+        dxdt = vlon*math.cos(psi) - vlat*math.sin(psi)
+        dydt = vlon*math.sin(psi) + vlat*math.cos(psi)
 
         return dxdt, dydt, dpsidt, dvlondt, dvlatdt, domegadt
 
@@ -516,10 +518,11 @@ class Car:
         """
 
         states = np.concatenate((self.center, np.array([self.psi, self.vlon, self.vlat, self.omega])))
-        a, delta = inputs # inputs contains power and TOTAL steering angle (is calculated in step())        
+        a, delta = inputs # inputs contains acc and TOTAL steering angle (is calculated in step())        
 
         try: # calculate rotational inertia
-            R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan(math.tan(delta) * self.LR/(self.LF+self.LR)))
+            R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan2(math.tan(delta) * self.LR,(self.LF+self.LR)))
+            # R = float(self.vlon)/float(self.omega) # cast because numpy types do not throw exceptions
             JZ = self.M *R**2
         except ZeroDivisionError:
             JZ = np.Inf
@@ -528,7 +531,7 @@ class Car:
         res = integrate.solve_ivp(fun=self._car_dynamics, t_span=(self.t0, self.t0+self.cycletime), \
                                   y0=states, args=[args], \
                                   t_eval=None) # old: t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10) --> caused a bug
-        
+
         self.set_car_pos(res.y[0,-1], res.y[1,-1], res.y[2,-1], delta) # arguments: x,y,psi,delta
         self.vlon = res.y[3,-1]
         self.vlat = res.y[4,-1]
