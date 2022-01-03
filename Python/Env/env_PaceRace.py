@@ -133,6 +133,7 @@ class PaceRaceEnv(gym.Env):
         # unpacking and conversion
         P, delta_delta = action # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
+
         # ERROR HERE: if vlon is very small, a becomes Inf! not fixable with try/except, because not continiuous!
         # calculate feasable acceleceration
         if self.car01.vlon == 0:
@@ -161,12 +162,14 @@ class PaceRaceEnv(gym.Env):
         collision_check = self.car01.collision_check(self.road)
         if collision_check:
             self.car01.set_resume_pos(self.road)
+            print("CAR CRASH!!!")
 
         # check critical centrifugal force
         Fmax = self.car01.M * 9.81 * self.MU # radius of traction circle
-        Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force
+        Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
         if Fres > Fmax:
-            self.car01.set_resume_pos(self.road)
+            print("Haftkraft überschritten!")
+            # self.car01.set_resume_pos(self.road)
 
         ######################################################################
         # REWARD SECTION
@@ -236,10 +239,114 @@ class PaceRaceEnv(gym.Env):
 
 
 if __name__ == '__main__':
-    g = PaceRaceEnv()
+    
+    g = PaceRaceEnv(CT=0.1, ROADWIDTH=300)
     g.reset()
-    g.render(mode='human')
-    for i in range(50):
-        g.step((0, 0))
-        g.render(mode='human')
-    plt.show()
+    action = np.array([[50_000, 0.0],
+                       [50_000, 0.0],
+                       [50_000, 0.0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, -np.pi/16],
+                       [50_000, -np.pi/16],
+                       [50_000, -np.pi/16],
+                       [50_000, -np.pi/16],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0],
+                       [50_000, 0]])
+    
+    # Get data from road
+    x_center_line = np.array(g.road.center_line.coords)[:,0] 
+    y_center_line = np.array(g.road.center_line.coords)[:,1] 
+    x_left_line = np.array(g.road.left_line.coords)[:,0] 
+    y_left_line = np.array(g.road.left_line.coords)[:,1] 
+    x_right_line = np.array(g.road.right_line.coords)[:,0] 
+    y_right_line = np.array(g.road.right_line.coords)[:,1] 
+    # Visualize Road
+    fig4, ax4 = plt.subplots()
+    ax4.plot(x_center_line, y_center_line, label='center_line')
+    ax4.plot(x_left_line, y_left_line, label = 'left_line')
+    ax4.plot(x_right_line, y_right_line, label = 'right_line')
+    delta = 0
+    c = 0
+    for i in action:
+        c +=1
+        print(20*"-")
+        print(f"Iteration {c}")
+        # Add car1 to current figure
+        ax4.scatter(g.car01.center[0], g.car01.center[1], label = 'car1_center')
+        #ax4.scatter(g.car01.corners[:,0], g.car01.corners[:,1], label = 'car1_corners')
+        #ax4.scatter(g.car01.sensors[:,0], g.car01.sensors[:,1], label = 'car1_sensors')
+        #ax4.legend()
+        fig4.suptitle('Road and car1 on start-position')
+        obs, reward, done, info = g.step(i)
+        print(f"delta: {g.car01.delta}")
+        print(f"psi: {g.car01.psi}")
+        print(f"vlon: {g.car01.vlon}")
+        print(f"vlat: {g.car01.vlat}")
+        
+    
+    # g.render(mode='human')
+    # for i in range(50):
+    #     g.step((0, 0))
+    #     g.render(mode='human')
+    # plt.show()
