@@ -4,11 +4,13 @@ import numpy as np
 # from scipy import integrate
 from matplotlib import pyplot as plt
 import gym
-# import tkinter as tk
+import time as t
+import tkinter as tk
 # from gym import spaces
 from gym.utils import seeding
 from cls_Car import Car
 from cls_Road import Road
+from shapely.geometry import LineString, Point, Polygon
 
 
 ### alles in SI-Basiseinheiten
@@ -222,12 +224,103 @@ class PaceRaceEnv(gym.Env):
         observation = np.concatenate((states, np.min(sensdist, axis = 1)), axis=None) 
         return np.array([observation], dtype=np.float32).flatten()
 
-    def render(self, mode='human'):
-        pass
-        # if mode == 'human':
-            # tkinter Visualisierung
-        # elif mode == '...'
-        #     plt.scatter(self.state[0], self.state[1], s=20, marker='o', color='g')
+    def render(self, canvas, iteration, delete_old, mode='human'):
+        
+        if mode == 'human':    
+            if iteration == 0:   
+                
+                # get canvas height for up-down-flipping
+                self.canvas = canvas
+                self.Y = canvas.winfo_reqheight()-4 # height of canvas, minus 4 is necessary
+
+                # extract road data
+                x, y   = LineString(self.road.center_line).xy
+                xl, yl = LineString(self.road.left_line).xy
+                xr, yr = LineString(self.road.right_line).xy
+                y = np.add(y, -self.Y)
+                yl = np.add(yl, -self.Y)
+                yr = np.add(yr, -self.Y)
+                
+                # get data for best adaption of the road into the canvas
+                self.min_x = min(min(x)-self.ROADWIDTH, min(x)+self.ROADWIDTH)
+                self.max_x = max(max(x)-self.ROADWIDTH, max(x)+self.ROADWIDTH)
+                self.min_y = min(min(y)-self.ROADWIDTH, min(y)+self.ROADWIDTH)
+                self.max_y = max(max(y)-self.ROADWIDTH, max(y)+self.ROADWIDTH)
+                delta_x = self.max_x - self.min_x
+                delta_y = self.max_y - self.min_y
+                factor_x = CANVAS_WIDTH / delta_x
+                factor_y = CANVAS_HEIGHT / delta_y
+                self.factor = min(factor_x, factor_y) # resizing FACTOR, e.g. FAKTOR=10 => 10pixel==1m
+    
+                # align road data to render_gui
+                x = self.factor * np.add(x, -self.min_x)
+                y = self.factor * np.add(y, -self.min_y)
+                xl = self.factor * np.add(xl, -self.min_x)
+                yl = self.factor * np.add(yl, -self.min_y)                
+                xr = self.factor * np.add(xr, -self.min_x)
+                yr = self.factor * np.add(yr, -self.min_y)
+                
+                # generate road lines
+                center_line_data = list((np.ravel(([x,y]),'F'))) # list is neccessary for a correct separation with comma             
+                canvas.create_line(center_line_data, dash=(4), fill="grey", width=1)
+                left_line_data   = list((np.ravel(([xl,yl]),'F'))) # list is neccessary for a correct separation with comma
+                canvas.create_line(left_line_data, fill="brown", width=2)
+                right_line_data  = list((np.ravel(([xr,yr]),'F'))) # list is neccessary for a correct separation with comma
+                canvas.create_line(right_line_data, fill="brown", width=2)
+                
+            # extract and align car data
+            x_car = self.car01.corners[:,0]
+            y_car = np.add(self.car01.corners[:,1], -self.Y)
+            x_car = self.factor * np.add(x_car, -self.min_x)
+            y_car = self.factor * np.add(y_car, -self.min_y)
+            car01_data = list((np.ravel(([x_car,y_car]),'F'))) # list is neccessary for a correct separation with comma
+            
+            # extract and align sensor data
+            x_s01 = [self.car01.corners[3,0], self.car01.sensors[0,0]]
+            y_s01 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[0,1]-self.Y]
+            x_s01 = self.factor * np.add(x_s01, -self.min_x)
+            y_s01 = self.factor * np.add(y_s01, -self.min_y)
+            s01_line_data = list((np.ravel(([x_s01,y_s01]),'F'))) # list is neccessary for a correct separation with comma
+            x_s03 = [self.car01.corners[3,0], self.car01.sensors[1,0]]
+            y_s03 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[1,1]-self.Y]
+            x_s03 = self.factor * np.add(x_s03, -self.min_x)
+            y_s03 = self.factor * np.add(y_s03, -self.min_y)
+            s03_line_data = list((np.ravel(([x_s03,y_s03]),'F'))) # list is neccessary for a correct separation with comma
+            x_s05 = [self.car01.corners[3,0], self.car01.sensors[2,0]]
+            y_s05 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[2,1]-self.Y]
+            x_s05 = self.factor * np.add(x_s05, -self.min_x)
+            y_s05 = self.factor * np.add(y_s05, -self.min_y)
+            s05_line_data = list((np.ravel(([x_s05,y_s05]),'F'))) # list is neccessary for a correct separation with comma
+            x_s07 = [self.car01.corners[3,0], self.car01.sensors[3,0]]
+            y_s07 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[3,1]-self.Y]
+            x_s07 = self.factor * np.add(x_s07, -self.min_x)
+            y_s07 = self.factor * np.add(y_s07, -self.min_y)
+            s07_line_data = list((np.ravel(([x_s07,y_s07]),'F'))) # list is neccessary for a correct separation with comma
+            x_s09 = [self.car01.corners[3,0], self.car01.sensors[4,0]]
+            y_s09 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[4,1]-self.Y]
+            x_s09 = self.factor * np.add(x_s09, -self.min_x)
+            y_s09 = self.factor * np.add(y_s09, -self.min_y)
+            s09_line_data = list((np.ravel(([x_s09,y_s09]),'F'))) # list is neccessary for a correct separation with comma
+
+            # generate car and sensor data
+            if iteration !=0 and delete_old == True:
+                self.canvas.delete(self.car_polygon)
+                self.canvas.delete(self.car_s01)
+                self.canvas.delete(self.car_s03)
+                self.canvas.delete(self.car_s05)
+                self.canvas.delete(self.car_s07)
+                self.canvas.delete(self.car_s09)
+            self.car_polygon = self.canvas.create_polygon(car01_data, fill="blue", width=1)
+            self.car_s01 = self.canvas.create_line(s01_line_data, fill="black", width=1)
+            self.car_s03 = self.canvas.create_line(s03_line_data, fill="black", width=1) 
+            self.car_s05 = self.canvas.create_line(s05_line_data, fill="black", width=1) 
+            self.car_s07 = self.canvas.create_line(s07_line_data, fill="black", width=1) 
+            self.car_s09 = self.canvas.create_line(s09_line_data, fill="black", width=1) 
+  
+        else:
+        #elif mode == '...'
+            pass
+            # plt.scatter(self.state[0], self.state[1], s=20, marker='o', color='g')
 
     # Current Version of gym
     # def seed(self):
@@ -244,10 +337,38 @@ class PaceRaceEnv(gym.Env):
 
 
 
+
+
 if __name__ == '__main__':
     
     g = PaceRaceEnv(CF=49_000, CR=49_000, CT=0.1, ROADWIDTH=30)
     g.reset()
+
+    
+    render_gui = tk.Tk() # parent window for canvas
+    CANVAS_WIDTH = 1800
+    CANVAS_HEIGHT = 1000
+    RENDER_ANY = 10
+    canvas = tk.Canvas(render_gui, width=CANVAS_WIDTH, height=CANVAS_HEIGHT) # canvas is the rendering area
+    canvas.pack() # required to visualize the canvas
+    
+    for i in range(1000):
+        g.step((0, 0))
+        #t.sleep(0.01)
+        if i % RENDER_ANY == 0:
+            g.render(canvas, i, delete_old = True, mode='human')
+            render_gui.update()
+    #plt.show()
+    render_gui.mainloop()
+    
+    
+    
+    
+    
+    
+    
+    
+
     action = np.array([[50_000, 0.0],
                        [50_000, 0.0],
                        [50_000, 0.0],
@@ -356,3 +477,4 @@ if __name__ == '__main__':
     #     g.step((0, 0))
     #     g.render(mode='human')
     # plt.show()
+
