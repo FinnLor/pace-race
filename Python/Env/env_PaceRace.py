@@ -238,9 +238,12 @@ class PaceRaceEnv(gym.Env):
                 x, y   = LineString(self.road.center_line).xy
                 xl, yl = LineString(self.road.left_line).xy
                 xr, yr = LineString(self.road.right_line).xy
-                y = np.add(y, -self.Y)
-                yl = np.add(yl, -self.Y)
-                yr = np.add(yr, -self.Y)
+                #y = np.add(self.Y, -y)
+                y = np.subtract(self.Y, y)
+                #yl = np.add(self.Y, -yl)
+                yl = np.subtract(self.Y, yl)
+                #yr = np.add(self.Y, -yr)
+                yr = np.subtract(self.Y, yr)
                 
                 # get data for best adaption of the road into the canvas
                 self.min_x = min(min(x)-self.ROADWIDTH, min(x)+self.ROADWIDTH)
@@ -282,34 +285,34 @@ class PaceRaceEnv(gym.Env):
                 
             # extract and align car data
             x_car = self.car01.corners[:,0]
-            y_car = np.add(self.car01.corners[:,1], -self.Y)
+            y_car = np.subtract(self.Y, self.car01.corners[:,1])
             x_car = self.factor * np.add(x_car, -self.min_x)
             y_car = self.factor * np.add(y_car, -self.min_y)
             car01_data = list((np.ravel(([x_car,y_car]),'F'))) # list is neccessary for a correct separation with comma
             
             # extract and align sensor data
             x_s01 = [self.car01.corners[3,0], self.car01.sensors[0,0]]
-            y_s01 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[0,1]-self.Y]
+            y_s01 = [self.Y-self.car01.corners[3,1], self.Y-self.car01.sensors[0,1]]
             x_s01 = self.factor * np.add(x_s01, -self.min_x)
             y_s01 = self.factor * np.add(y_s01, -self.min_y)
             s01_line_data = list((np.ravel(([x_s01,y_s01]),'F'))) # list is neccessary for a correct separation with comma
             x_s03 = [self.car01.corners[3,0], self.car01.sensors[1,0]]
-            y_s03 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[1,1]-self.Y]
+            y_s03 = [self.Y-self.car01.corners[3,1], self.Y-self.car01.sensors[1,1]]
             x_s03 = self.factor * np.add(x_s03, -self.min_x)
             y_s03 = self.factor * np.add(y_s03, -self.min_y)
             s03_line_data = list((np.ravel(([x_s03,y_s03]),'F'))) # list is neccessary for a correct separation with comma
             x_s05 = [self.car01.corners[3,0], self.car01.sensors[2,0]]
-            y_s05 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[2,1]-self.Y]
+            y_s05 = [self.Y-self.car01.corners[3,1], self.Y-self.car01.sensors[2,1]]
             x_s05 = self.factor * np.add(x_s05, -self.min_x)
             y_s05 = self.factor * np.add(y_s05, -self.min_y)
             s05_line_data = list((np.ravel(([x_s05,y_s05]),'F'))) # list is neccessary for a correct separation with comma
             x_s07 = [self.car01.corners[3,0], self.car01.sensors[3,0]]
-            y_s07 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[3,1]-self.Y]
+            y_s07 = [self.Y-self.car01.corners[3,1], self.Y-self.car01.sensors[3,1]]
             x_s07 = self.factor * np.add(x_s07, -self.min_x)
             y_s07 = self.factor * np.add(y_s07, -self.min_y)
             s07_line_data = list((np.ravel(([x_s07,y_s07]),'F'))) # list is neccessary for a correct separation with comma
             x_s09 = [self.car01.corners[3,0], self.car01.sensors[4,0]]
-            y_s09 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[4,1]-self.Y]
+            y_s09 = [self.Y-self.car01.corners[3,1], self.Y-self.car01.sensors[4,1]]
             x_s09 = self.factor * np.add(x_s09, -self.min_x)
             y_s09 = self.factor * np.add(y_s09, -self.min_y)
             s09_line_data = list((np.ravel(([x_s09,y_s09]),'F'))) # list is neccessary for a correct separation with comma
