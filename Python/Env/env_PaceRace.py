@@ -232,14 +232,15 @@ class PaceRaceEnv(gym.Env):
                 # get canvas height for up-down-flipping
                 self.canvas = canvas
                 self.Y = canvas.winfo_reqheight()-4 # height of canvas, minus 4 is necessary
+                self.X = canvas.winfo_reqwidth()-4 # width of canvas, minus 4 is necessary
 
                 # extract road data
                 x, y   = LineString(self.road.center_line).xy
                 xl, yl = LineString(self.road.left_line).xy
                 xr, yr = LineString(self.road.right_line).xy
-                y = np.add(y, -self.Y)
-                yl = np.add(yl, -self.Y)
-                yr = np.add(yr, -self.Y)
+                y = np.subtract(self.Y, y)
+                yl = np.subtract(self.Y, yl)
+                yr = np.subtract(self.Y, yr)
                 
                 # get data for best adaption of the road into the canvas
                 self.min_x = min(min(x)-self.ROADWIDTH, min(x)+self.ROADWIDTH)
@@ -262,42 +263,53 @@ class PaceRaceEnv(gym.Env):
                 
                 # generate road lines
                 center_line_data = list((np.ravel(([x,y]),'F'))) # list is neccessary for a correct separation with comma             
-                canvas.create_line(center_line_data, dash=(4), fill="grey", width=1)
+                self.canvas.create_line(center_line_data, dash=(4), fill="grey", width=1)
                 left_line_data   = list((np.ravel(([xl,yl]),'F'))) # list is neccessary for a correct separation with comma
-                canvas.create_line(left_line_data, fill="brown", width=2)
+                self.canvas.create_line(left_line_data, fill="brown", width=2)
                 right_line_data  = list((np.ravel(([xr,yr]),'F'))) # list is neccessary for a correct separation with comma
-                canvas.create_line(right_line_data, fill="brown", width=2)
+                self.canvas.create_line(right_line_data, fill="brown", width=2)
+
+                # generate 10m-measure-line
+                x_m = [self.X/2-(5*self.factor), self.X/2+(5*self.factor)]
+                y_m = [self.Y-10, self.Y-10]
+                measure_line_data = list((np.ravel(([x_m,y_m]),'F')))
+                self.canvas.create_line(measure_line_data, width=5)
+      
+                # generate measurement text
+                canvas_id = self.canvas.create_text(10 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
+                canvas.itemconfig(canvas_id, text="=10m  (1 Pixel entspr.  m)")
+                canvas.insert(canvas_id, 23, "%f" % self.factor)
                 
             # extract and align car data
             x_car = self.car01.corners[:,0]
-            y_car = np.add(self.car01.corners[:,1], -self.Y)
+            y_car = np.subtract(self.Y, self.car01.corners[:,1])
             x_car = self.factor * np.add(x_car, -self.min_x)
             y_car = self.factor * np.add(y_car, -self.min_y)
             car01_data = list((np.ravel(([x_car,y_car]),'F'))) # list is neccessary for a correct separation with comma
             
             # extract and align sensor data
             x_s01 = [self.car01.corners[3,0], self.car01.sensors[0,0]]
-            y_s01 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[0,1]-self.Y]
+            y_s01 = [self.Y-self.car01.corners[3,1], self.Y-self.car01.sensors[0,1]]
             x_s01 = self.factor * np.add(x_s01, -self.min_x)
             y_s01 = self.factor * np.add(y_s01, -self.min_y)
             s01_line_data = list((np.ravel(([x_s01,y_s01]),'F'))) # list is neccessary for a correct separation with comma
             x_s03 = [self.car01.corners[3,0], self.car01.sensors[1,0]]
-            y_s03 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[1,1]-self.Y]
+            y_s03 = [self.Y-self.car01.corners[3,1], self.Y-self.car01.sensors[1,1]]
             x_s03 = self.factor * np.add(x_s03, -self.min_x)
             y_s03 = self.factor * np.add(y_s03, -self.min_y)
             s03_line_data = list((np.ravel(([x_s03,y_s03]),'F'))) # list is neccessary for a correct separation with comma
             x_s05 = [self.car01.corners[3,0], self.car01.sensors[2,0]]
-            y_s05 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[2,1]-self.Y]
+            y_s05 = [self.Y-self.car01.corners[3,1], self.Y-self.car01.sensors[2,1]]
             x_s05 = self.factor * np.add(x_s05, -self.min_x)
             y_s05 = self.factor * np.add(y_s05, -self.min_y)
             s05_line_data = list((np.ravel(([x_s05,y_s05]),'F'))) # list is neccessary for a correct separation with comma
             x_s07 = [self.car01.corners[3,0], self.car01.sensors[3,0]]
-            y_s07 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[3,1]-self.Y]
+            y_s07 = [self.Y-self.car01.corners[3,1], self.Y-self.car01.sensors[3,1]]
             x_s07 = self.factor * np.add(x_s07, -self.min_x)
             y_s07 = self.factor * np.add(y_s07, -self.min_y)
             s07_line_data = list((np.ravel(([x_s07,y_s07]),'F'))) # list is neccessary for a correct separation with comma
             x_s09 = [self.car01.corners[3,0], self.car01.sensors[4,0]]
-            y_s09 = [self.car01.corners[3,1]-self.Y, self.car01.sensors[4,1]-self.Y]
+            y_s09 = [self.Y-self.car01.corners[3,1], self.Y-self.car01.sensors[4,1]]
             x_s09 = self.factor * np.add(x_s09, -self.min_x)
             y_s09 = self.factor * np.add(y_s09, -self.min_y)
             s09_line_data = list((np.ravel(([x_s09,y_s09]),'F'))) # list is neccessary for a correct separation with comma
