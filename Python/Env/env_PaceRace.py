@@ -233,16 +233,13 @@ class PaceRaceEnv(gym.Env):
                 self.canvas = canvas
                 self.Y = canvas.winfo_reqheight()-4 # height of canvas, minus 4 is necessary
                 self.X = canvas.winfo_reqwidth()-4 # width of canvas, minus 4 is necessary
-                
+
                 # extract road data
                 x, y   = LineString(self.road.center_line).xy
                 xl, yl = LineString(self.road.left_line).xy
                 xr, yr = LineString(self.road.right_line).xy
-                #y = np.add(self.Y, -y)
                 y = np.subtract(self.Y, y)
-                #yl = np.add(self.Y, -yl)
                 yl = np.subtract(self.Y, yl)
-                #yr = np.add(self.Y, -yr)
                 yr = np.subtract(self.Y, yr)
                 
                 # get data for best adaption of the road into the canvas
