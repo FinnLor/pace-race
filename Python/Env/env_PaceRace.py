@@ -223,7 +223,8 @@ class PaceRaceEnv(gym.Env):
                 # get canvas height for up-down-flipping
                 self.canvas = canvas
                 self.Y = canvas.winfo_reqheight()-4 # height of canvas, minus 4 is necessary
-
+                self.X = canvas.winfo_reqwidth()-4 # width of canvas, minus 4 is necessary
+                
                 # extract road data
                 x, y   = LineString(self.road.center_line).xy
                 xl, yl = LineString(self.road.left_line).xy
@@ -253,11 +254,22 @@ class PaceRaceEnv(gym.Env):
                 
                 # generate road lines
                 center_line_data = list((np.ravel(([x,y]),'F'))) # list is neccessary for a correct separation with comma             
-                canvas.create_line(center_line_data, dash=(4), fill="grey", width=1)
+                self.canvas.create_line(center_line_data, dash=(4), fill="grey", width=1)
                 left_line_data   = list((np.ravel(([xl,yl]),'F'))) # list is neccessary for a correct separation with comma
-                canvas.create_line(left_line_data, fill="brown", width=2)
+                self.canvas.create_line(left_line_data, fill="brown", width=2)
                 right_line_data  = list((np.ravel(([xr,yr]),'F'))) # list is neccessary for a correct separation with comma
-                canvas.create_line(right_line_data, fill="brown", width=2)
+                self.canvas.create_line(right_line_data, fill="brown", width=2)
+
+                # generate 10m-measure-line
+                x_m = [self.X/2-(5*self.factor), self.X/2+(5*self.factor)]
+                y_m = [self.Y-10, self.Y-10]
+                measure_line_data = list((np.ravel(([x_m,y_m]),'F')))
+                self.canvas.create_line(measure_line_data, width=5)
+      
+                # generate measurement text
+                canvas_id = self.canvas.create_text(10 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
+                canvas.itemconfig(canvas_id, text="=10m  (1 Pixel entspr.  m)")
+                canvas.insert(canvas_id, 23, "%f" % self.factor)
                 
             # extract and align car data
             x_car = self.car01.corners[:,0]
