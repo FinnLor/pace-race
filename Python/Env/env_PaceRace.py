@@ -233,7 +233,7 @@ class PaceRaceEnv(gym.Env):
                 self.canvas = canvas
                 self.Y = canvas.winfo_reqheight()-4 # height of canvas, minus 4 is necessary
                 self.X = canvas.winfo_reqwidth()-4 # width of canvas, minus 4 is necessary
-                
+
                 # extract road data
                 x, y   = LineString(self.road.center_line).xy
                 xl, yl = LineString(self.road.left_line).xy
