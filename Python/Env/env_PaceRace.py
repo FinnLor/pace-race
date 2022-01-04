@@ -276,9 +276,10 @@ class PaceRaceEnv(gym.Env):
                 self.canvas.create_line(measure_line_data, width=5)
       
                 # generate measurement text
+                meter_pro_pixel = 1/self.factor
                 canvas_id = self.canvas.create_text(10 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
                 canvas.itemconfig(canvas_id, text="=10m  (1 Pixel entspr.  m)")
-                canvas.insert(canvas_id, 23, "%f" % self.factor)
+                canvas.insert(canvas_id, 23, "%f" % meter_pro_pixel)
                 
             # extract and align car data
             x_car = self.car01.corners[:,0]
