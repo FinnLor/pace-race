@@ -40,7 +40,7 @@ road_lsr  = LineString(border_data_right)
 # initialize cars
 car_data = np.array([[42, 40.5], [47, 40.5], [47,43], [42,43]]) # out (due to distance)
 car1_data = np.array([[80, 32.5], [85, 32.5], [85,35], [80,35]]) # out (due to collision)
-car1_c = [82.5, 33.75] # car1 center
+car1_c = [30.5, 47.75] # car1 center
 car2_data = np.array([[48, 32.5], [53, 32.5], [53,35], [48,35]]) # fine
 car3_data = np.array([[42, 40.5], [47, 40.5], [47,43], [42,43]]) # out (due to distance)
 car4_data = np.array([[30, 5], [35, 5], [35,7.5], [30,7.5]]) # out (due to distance)
@@ -106,12 +106,20 @@ elif c_c_dl < c_c_dr:
 else:
     print("testNIE")
 
+
+
 c_c_np = np.array(c_c)
 v_forward = np.dot(rot,  (c_c_np - point_on_line)) # get forward-direction
 v_x = np.array([10, 0])
 psi_forward = np.arccos(np.dot(v_forward,v_x)/(np.linalg.norm(v_forward)*np.linalg.norm(v_x)))
 delta = 0
 #set_car_pos(point_on_line[0],point_on_line[1],psi_forward,delta) # oder so ähnliches muss aufgerufen werden
+
+
+
+path_length = road_lsc.project(c_c,normalized = True)
+print("c_c ", c_c)
+print("Path length ", path_length)
 
 
 

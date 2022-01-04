@@ -1,11 +1,11 @@
 import os
-import env_PaceRace
+from env_PaceRace import PaceRaceEnv
 from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
-from plotting import plot_returns
+#from plotting import plot_returns
 
 
 ### CONFIGURATION
@@ -20,7 +20,7 @@ config = {'total_timesteps': 300_000,
 
 
 ### ENV SETUP
-env = Monitor(env_PaceRace.PaceRaceEnv())
+env = Monitor(PaceRaceEnv())
 check_env(env, warn=True)
 
 ### MODEL SETUP
@@ -55,6 +55,9 @@ checkpoint_callback = CheckpointCallback(save_freq=config['checkpoint_freq'],
 print('Start training')
 model.learn(total_timesteps=config['total_timesteps'],
             callback=[eval_callback, checkpoint_callback])
+
+### Save Replay-Buffer
+model.save_replay_buffer('Replay_Buffer') # Logo of 1.000.000 timesteps
 
 ### PLOTTING
 plot_returns(env.get_episode_rewards(), filename=os.path.join('best', 'env_return_history.png'))
