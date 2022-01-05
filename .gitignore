@@ -1,3 +1,3 @@
-Python/__pycache__/
-Python/Env/__pycache__/
-Python/Env/example_ReplayBuffer.pkl
+/__pycache__/
+/Env/__pycache__/
+/Env/example_ReplayBuffer.pkl
