@@ -531,8 +531,8 @@ class Car:
         res = integrate.solve_ivp(fun=self._car_dynamics, t_span=(self.t0, self.t0+self.cycletime), \
                                   y0=states, args=[args], \
                                   t_eval=None) # old: t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10) --> caused a bug
-
-        self.set_car_pos(res.y[0,-1], res.y[1,-1], res.y[2,-1], delta) # arguments: x,y,psi,delta
+        psi = res.y[2,-1] % (2*np.pi)
+        self.set_car_pos(res.y[0,-1], res.y[1,-1], psi, delta) # arguments: x,y,psi,delta
         self.vlon = res.y[3,-1]
         self.vlat = res.y[4,-1]
         self.omega = res.y[5,-1]

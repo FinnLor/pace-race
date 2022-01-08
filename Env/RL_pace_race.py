@@ -60,7 +60,7 @@ model.learn(total_timesteps=config['total_timesteps'],
 model.save_replay_buffer('Replay_Buffer') # Logo of 1.000.000 timesteps
 
 ### PLOTTING
-plot_returns(env.get_episode_rewards(), filename=os.path.join('best', 'env_return_history.png'))
+# here plots
 
 ### TEST GAMES
 print('Play 5 games')
