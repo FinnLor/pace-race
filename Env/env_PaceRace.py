@@ -63,34 +63,31 @@ class PaceRaceEnv(gym.Env):
 
 
         #### Reicht es diese Variablen lokal anzulegen? /FL
-        self.max_x_position = np.finfo(np.float32).max
-        self.min_x_position = np.finfo(np.float32).min
+        self.max_x_position = 10_000
+        self.min_x_position = -10_000
 
-        self.max_y_position = np.finfo(np.float32).max
-        self.min_y_position = np.finfo(np.float32).min
+        self.max_y_position = 10_000
+        self.min_y_position = -10_000
 
-        self.max_yaw_angle = np.finfo(np.float32).max
-        self.min_yaw_angle =  np.finfo(np.float32).min                                 # DAS IST KOMPLIZIERT ZU BEHANDELN !!! -> Modulo
+        self.max_yaw_angle = 2*np.pi
+        self.min_yaw_angle = -2*np.pi
 
-        self.max_velocity_lon = np.finfo(np.float32).max
-        self.min_velocity_lon = np.finfo(np.float32).min
+        self.max_velocity_lon = 100
+        self.min_velocity_lon = -100
 
-        self.max_velocity_lat = np.finfo(np.float32).max
-        self.min_velocity_lat = np.finfo(np.float32).min
-
-        # self.max_acceleration = np.finfo(np.float32).max
-        # self.min_acceleration = np.finfo(np.float32).min
+        self.max_velocity_lat = 100
+        self.min_velocity_lat = -100
         
         self.max_power = P # for accelerating
         self.min_power = -P # for decelerating
 
-        self.max_delta_steering_angle = np.finfo(np.float32).max
-        self.min_delta_steering_angle = np.finfo(np.float32).min
+        self.max_delta_steering_angle = 3*CT*np.pi/180 # Zeitabhängig. entspricht 3 Grad Lenkwinkel der Räder pro Sekunde
+        self.min_delta_steering_angle = -3*CT*np.pi/180
         
-        self.max_total_steering_angle = np.finfo(np.float32).max
-        self.min_total_steering_angle = np.finfo(np.float32).min    
+        self.max_total_steering_angle = 45*np.pi/180
+        self.min_total_steering_angle = -45*np.pi/180   
 
-        self.max_omega = np.finfo(np.float32).max
+        self.max_omega = np.finfo(np.float32).max   # ist implizit vorhanden durch v_max u delta_max. kann raus, muss überall angepasst werden.
         self.min_omega = np.finfo(np.float32).min
 
         self.sensordata_min = 0
@@ -138,15 +135,17 @@ class PaceRaceEnv(gym.Env):
 
         # ERROR HERE: if vlon is very small, a becomes Inf! not fixable with try/except, because not continiuous!
         # calculate feasable acceleceration
-        if self.car01.vlon == 0:
+        if P == 0:
+            a = 0
+        elif self.car01.vlon == 0:
             a = 9.81*self.MU
-        elif P>=0:
+        elif P>0:
             a = min(P/(self.car01.M*self.car01.vlon), 9.81*self.MU) 
         elif P<0:
             a = max(P/(self.car01.M*self.car01.vlon), -9.81*self.MU) 
         else:
             print('Error in calculation of acceleration.')
-        
+    
         # move car via dynamic model
         states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]))) # states before moving
         inputs = (a, delta) # must be a tuple
@@ -356,20 +355,20 @@ if __name__ == '__main__':
     
     g = PaceRaceEnv(CF=49_000, CR=49_000, CT=0.1, ROADWIDTH=30)
     g.reset()
-
-    
     render_gui = tk.Tk() # parent window for canvas
     CANVAS_WIDTH = 1800
     CANVAS_HEIGHT = 1000
-    RENDER_ANY = 10
+    RENDER_ANY = 1
     canvas = tk.Canvas(render_gui, width=CANVAS_WIDTH, height=CANVAS_HEIGHT) # canvas is the rendering area
     canvas.pack() # required to visualize the canvas
     
-    for i in range(1000):
-        g.step((0, 0))
+    for i in range(200):
+        g.step((10, 0))
         #t.sleep(0.01)
         if i % RENDER_ANY == 0:
             g.render(canvas, i, delete_old = True, mode='human')
+            a = math.sqrt(g.car01.vlat**2 + g.car01.vlon**2)
+            print(a)
             render_gui.update()
     #plt.show()
     render_gui.mainloop()
@@ -383,76 +382,76 @@ if __name__ == '__main__':
     
 
     action = np.array([[50_000, 0.0],
-                       [50_000, 0.0],
-                       [50_000, 0.0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, -np.pi/16],
-                       [50_000, -np.pi/16],
-                       [50_000, -np.pi/16],
-                       [50_000, -np.pi/16],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0],
-                       [50_000, 0]])
+                        [50_000, 0.0],
+                        [50_000, 0.0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, -np.pi/16],
+                        [50_000, -np.pi/16],
+                        [50_000, -np.pi/16],
+                        [50_000, -np.pi/16],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0],
+                        [50_000, 0]])
     
     # Get data from road
     x_center_line = np.array(g.road.center_line.coords)[:,0] 
