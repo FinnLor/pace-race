@@ -70,10 +70,12 @@ def helper_load_logged_data(file: str):
     return epoch, observations, actions, rewards 
 
 
-def helper_redering():
+def helper_rendering():
     # Render using tkinter
     pass
 
 
 if __name__ == "__main__":
     epoch, observations, actions, rewards = helper_load_logged_data('example_ReplayBuffer.pkl') # File to large for github...
+
+
