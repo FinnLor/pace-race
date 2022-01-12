@@ -6,7 +6,7 @@ Created on Dec 2021
 """
 
 from shapely.geometry import LineString, Point, Polygon
-from shapely.errors import ShapelyDeprecationWarning
+#from shapely.errors import ShapelyDeprecationWarning
 import numpy as np
 import math
 from scipy import integrate
@@ -268,8 +268,10 @@ class Car:
         elif dist_to_left_side < dist_to_right_side:
             add_to_psi = -np.pi/2
         else:
-            print("Check whether car is already set to start or resume position. Can't calculate psi.")      
-         
+           # print("Check whether car is already set to start or resume position. Can't calculate psi.")      
+	            
+	   return
+
         # Find psi
         psi = np.arctan2(normal_direction[1], normal_direction[0])+add_to_psi
         
@@ -431,14 +433,14 @@ class Car:
             dist[idx, :] = sensor_length
             
             # Check for intersections with the boundaries
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+ #           with warnings.catch_warnings():
+  #              warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
                 # Suppresses the warning
                 #   ShapelyDeprecationWarning: The array interface is deprecated and will no longer 
                 #   work in Shapely 2.0. Convert the '.coords' to a numpy array instead.
                 # because the proposed solution does not work when multiple points are returned.
-                intersec_left = np.array(sensor_line.intersection(road.left_line))   
-                intersec_right = np.array(sensor_line.intersection(road.right_line))
+            intersec_left = np.array(sensor_line.intersection(road.left_line))   
+            intersec_right = np.array(sensor_line.intersection(road.right_line))
             if np.size(intersec_left) == 2:
                 intersec_left = np.reshape(intersec_left, [1,2])
             if np.size(intersec_right) == 2:
