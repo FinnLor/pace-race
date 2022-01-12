@@ -6,7 +6,7 @@ Created on Dec 2021
 """
 
 from shapely.geometry import LineString, Point, Polygon
-#from shapely.errors import ShapelyDeprecationWarning
+from shapely.errors import ShapelyDeprecationWarning
 import numpy as np
 import math
 from scipy import integrate
@@ -268,8 +268,7 @@ class Car:
         elif dist_to_left_side < dist_to_right_side:
             add_to_psi = -np.pi/2
         else:
-           # print("Check whether car is already set to start or resume position. Can't calculate psi.")      
-	            
+           print("Check whether car is already set to start or resume position. Can't calculate psi.")          
 	   return
 
         # Find psi
@@ -433,8 +432,8 @@ class Car:
             dist[idx, :] = sensor_length
             
             # Check for intersections with the boundaries
- #           with warnings.catch_warnings():
-  #              warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
                 # Suppresses the warning
                 #   ShapelyDeprecationWarning: The array interface is deprecated and will no longer 
                 #   work in Shapely 2.0. Convert the '.coords' to a numpy array instead.
