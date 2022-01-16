@@ -1,4 +1,5 @@
 import math
+import random
 # from typing import Optional
 import numpy as np
 # from scipy import integrate
@@ -205,6 +206,7 @@ class PaceRaceEnv(gym.Env):
 
     def reset(self): # FOR OLD VERSION OF GYM
         ### CONSTRUCT NEW ROAD
+        self.ROADWIDTH = round(random.uniform(self.CAR_WIDTH*2,self.CAR_WIDTH*12), 2)
         self.road = Road(ROADWIDTH=self.ROADWIDTH, NPOINTS = 1000)
 
         ### SET BACK CAR TO START POSITION
