@@ -268,7 +268,8 @@ class Car:
         elif dist_to_left_side < dist_to_right_side:
             add_to_psi = -np.pi/2
         else:
-            print("Check whether car is already set to start or resume position. Can't calculate psi.")      
+            print("Check whether car is already set to start or resume position. Can't calculate psi.")   
+            return
          
         # Find psi
         psi = np.arctan2(normal_direction[1], normal_direction[0])+add_to_psi
