@@ -133,6 +133,12 @@ class PaceRaceEnv(gym.Env):
         P, delta_delta = action # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
 
+        # Clip steering angle if necessary
+        if delta >self.max_delta_steering_angle:
+            delta = self.max_delta_steering_angle
+        elif delta < self.min_delta_steering_angle:
+            delta = self.min_delta_steering_angle
+        
         # ERROR HERE: if vlon is very small, a becomes Inf! not fixable with try/except, because not continiuous!
         # calculate feasable acceleceration
         if P == 0:
