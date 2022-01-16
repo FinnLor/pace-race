@@ -140,7 +140,8 @@ class PaceRaceEnv(gym.Env):
         # rescale the normalized actions
         range_action_Power = self.max_power - self.min_power
         range_action_delta_delta = self.max_delta_steering_angle - self.min_delta_steering_angle
-        action_scaled = action * 0.5 * [range_action_Power, range_action_delta_delta] # x * (b-a)/2, as dot product
+        range_actions = np.array([range_action_Power, range_action_delta_delta])
+        action_scaled = np.asarray(action) * 0.5 * range_actions # x * (b-a)/2, dot-wise multiplied
 
         # unpacking and conversion
         P, delta_delta = action_scaled # unpack RL action variables
@@ -391,7 +392,7 @@ if __name__ == '__main__':
     canvas.pack() # required to visualize the canvas
     
     for i in range(200):
-        g.step((10, 0))
+        g.step((0.01, 0))
         #t.sleep(0.01)
         if i % RENDER_ANY == 0:
             g.render(canvas, i, delete_old = True, mode='human')
@@ -400,13 +401,6 @@ if __name__ == '__main__':
             render_gui.update()
     #plt.show()
     render_gui.mainloop()
-    
-    
-    
-    
-    
-    
-    
     
 
     action = np.array([[50_000, 0.0],
