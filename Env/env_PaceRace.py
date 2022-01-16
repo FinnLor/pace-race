@@ -51,6 +51,7 @@ class PaceRaceEnv(gym.Env):
 
     def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
 
+        # super(PaceRaceEnv, self).__init__() # FS: have seen this in other code ... purpose?
         self.counter = 0
  
         self.MU = MU # Reibzahl, trockener Asphalt
@@ -185,12 +186,11 @@ class PaceRaceEnv(gym.Env):
         except ZeroDivisionError:
             F_ctfg = 0
 
-
         # collision check
         collision_check = self.car01.collision_check(self.road)
         if collision_check:
             psi_error = self.car01.set_resume_pos(self.road)
-            if not psi_error:
+            if psi_error == False:
                 print(f"Collision: {self.counter}")
             # print("CAR CRASH!!!")
 
@@ -200,7 +200,7 @@ class PaceRaceEnv(gym.Env):
         if Fres > Fmax:
             #print("Haftkraft überschritten!")
             psi_error = self.car01.set_resume_pos(self.road)
-            if not psi_error:
+            if psi_error == False:
                 print(f"MaxAcc: {self.counter}") # probably reset() would be a better penalty
         else:
             #print("Haftkraft: -- OK --")

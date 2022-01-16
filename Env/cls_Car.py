@@ -454,6 +454,21 @@ class Car:
             for intersec_r in intersec_right:
                 dist[idx, 1] = min(dist[idx, 1], sensor_ref.distance(Point(intersec_r))) 
             
+            #---------------------------------------------------------------------
+            # DEBUGGING SECTION
+            if dist[idx,:].any() < 0:
+                print("----------Dist is < 0")
+                # print(road.center_line.project(self.center, normalized = True))
+                print(road.get_path_length(self.center))
+            elif dist[idx,:].any() == 0:
+                print("----------Dist was = 0")
+                print(f"----------SensL is {sensor_length}")
+                if dist[idx,0] == 0: dist[idx,0] = 0.01
+                if dist[idx,1] == 0: dist[idx,1] = 0.01
+                # print(road.center_line.project(self.center, normalized = True))
+                print(road.get_path_length(self.center))
+            #---------------------------------------------------------------------
+                
             # Resize sensor distances due to the max length of the sensorline
             if normalized == True:
                 dist[idx, :] = dist[idx, :]/sensor_length

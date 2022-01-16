@@ -3,6 +3,7 @@ from env_PaceRace import PaceRaceEnv
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 #from plotting import plot_returns
@@ -22,21 +23,12 @@ config = {'total_timesteps': 300_000,
 ### ENV SETUP
 env = Monitor(PaceRaceEnv())
 check_env(env, warn=True)
-
-# def myadam():
-    
+env = DummyVecEnv([lambda: PaceRaceEnv()])
+env = VecCheckNan(env, raise_exception=True)   
 
 ### MODEL SETUP
-# model = A2C('MlpPolicy',
-#             env,
-#             verbose=0,
-#             gamma=1.0,
-#             learning_rate=config['learning_rate'],
-#             policy_kwargs={'net_arch': config['network_size']})
 model = SAC("MlpPolicy",
             env,
-            verbose=1,
-            buffer_size=10_000,
             )
 
 ### EVAL INIT MODEL
