@@ -5,7 +5,7 @@ import numpy as np
 # from scipy import integrate
 from matplotlib import pyplot as plt
 import gym
-import time as t
+# import time as t
 import tkinter as tk
 # from gym import spaces
 from gym.utils import seeding
@@ -51,6 +51,8 @@ class PaceRaceEnv(gym.Env):
 
     def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
 
+        # super(PaceRaceEnv, self).__init__() # FS: have seen this in other code ... purpose?
+        self.counter = 0
  
         self.MU = MU # Reibzahl, trockener Asphalt
         self.ROADWIDTH = ROADWIDTH
@@ -95,16 +97,18 @@ class PaceRaceEnv(gym.Env):
         self.sensordata_max = 1
 
         # Action Space
-        self.low_action = np.array(
-            [self.min_power, self.min_delta_steering_angle], dtype=np.float32
-        )
-        self.high_action= np.array(
-            [self.max_power, self.max_delta_steering_angle], dtype=np.float32
-        )
+        # self.low_action = np.array(
+        #     [self.min_power, self.min_delta_steering_angle], dtype=np.float32
+        # )
+        # self.high_action= np.array(
+        #     [self.max_power, self.max_delta_steering_angle], dtype=np.float32
+        # )
 
+        # self.action_space = gym.spaces.Box(
+        #     low=self.low_action, high=self.high_action, dtype=np.float32 # changes FS: low_action instead low_state etc.
+        # )
         self.action_space = gym.spaces.Box(
-            low=self.low_action, high=self.high_action, dtype=np.float32 # changes FS: low_action instead low_state etc.
-        )
+            low=-1, high=1, shape=(2,), dtype="float32")
 
         # Observation Space
         # observation: [x, y, psi, vlon, vlat, omega, total_steering_angle, sensor1, sensor3, sensor5, sensor7, sensor9]
@@ -129,9 +133,19 @@ class PaceRaceEnv(gym.Env):
         self.seed()
 
     def step(self, action):
+        
+        self.counter += 1
+        if self.counter%1000 == 0:
+            print("--")
+
+        # rescale the normalized actions
+        range_action_Power = self.max_power - self.min_power
+        range_action_delta_delta = self.max_delta_steering_angle - self.min_delta_steering_angle
+        range_actions = np.array([range_action_Power, range_action_delta_delta])
+        action_scaled = np.asarray(action) * 0.5 * range_actions # x * (b-a)/2, dot-wise multiplied
 
         # unpacking and conversion
-        P, delta_delta = action # unpack RL action variables
+        P, delta_delta = action_scaled # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
 
         # Clip steering angle if necessary
@@ -140,8 +154,7 @@ class PaceRaceEnv(gym.Env):
         elif delta < self.min_delta_steering_angle:
             delta = self.min_delta_steering_angle
         
-        # ERROR HERE: if vlon is very small, a becomes Inf! not fixable with try/except, because not continiuous!
-        # calculate feasable acceleceration
+        # Calculate acceleration
         if P == 0:
             a = 0
         elif self.car01.vlon == 0:
@@ -152,7 +165,11 @@ class PaceRaceEnv(gym.Env):
             a = max(P/(self.car01.M*self.car01.vlon), -9.81*self.MU) 
         else:
             print('Error in calculation of acceleration.')
-    
+            
+        # # clip acceleration if velocity small or zero
+        # if self.car01.vlon < 0.5:
+        #     a = max(P/(self.car01.M*self.car01.vlon), 0)
+                    
         # move car via dynamic model
         states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]))) # states before moving
         inputs = (a, delta) # must be a tuple
@@ -169,26 +186,30 @@ class PaceRaceEnv(gym.Env):
         except ZeroDivisionError:
             F_ctfg = 0
 
-
         # collision check
         collision_check = self.car01.collision_check(self.road)
         if collision_check:
-            self.car01.set_resume_pos(self.road)
-            print("CAR CRASH!!!")
+            psi_error = self.car01.set_resume_pos(self.road)
+            if psi_error == False:
+                print(f"Collision: {self.counter}")
+            # print("CAR CRASH!!!")
 
         # check critical centrifugal force
         Fmax = self.car01.M * 9.81 * self.MU # radius of traction circle
         Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
         if Fres > Fmax:
-            print("Haftkraft überschritten!")
-            # self.car01.set_resume_pos(self.road) # probably reset() would be a better penalty
+            #print("Haftkraft überschritten!")
+            psi_error = self.car01.set_resume_pos(self.road)
+            if psi_error == False:
+                print(f"MaxAcc: {self.counter}") # probably reset() would be a better penalty
         else:
-            print("Haftkraft: -- OK --")
+            #print("Haftkraft: -- OK --")
+            pass
 
         ######################################################################
         # REWARD SECTION
         # Convert a possible numpy bool to a Python bool
-        done = bool(self.car01.get_path_length(self.road) >= 0.99)
+        done = bool(self.car01.get_path_length(self.road) >= 0.98)
         reward = 0 # reward wird in jedem step() ausgerechnet? Oder ist das eine Objektvariable, die kumuliert wird? -> Recherche!
 
         if not done:
@@ -212,7 +233,7 @@ class PaceRaceEnv(gym.Env):
 
     def reset(self): # FOR OLD VERSION OF GYM
         ### CONSTRUCT NEW ROAD
-        self.ROADWIDTH = round(random.uniform(self.CAR_WIDTH*2,self.CAR_WIDTH*12), 2)
+        self.ROADWIDTH = round(random.uniform(self.car01.WIDTH*3,self.car01.WIDTH*6), 2)
         self.road = Road(ROADWIDTH=self.ROADWIDTH, NPOINTS = 1000)
 
         ### SET BACK CAR TO START POSITION
@@ -371,7 +392,7 @@ if __name__ == '__main__':
     canvas.pack() # required to visualize the canvas
     
     for i in range(200):
-        g.step((10, 0))
+        g.step((0.01, 0))
         #t.sleep(0.01)
         if i % RENDER_ANY == 0:
             g.render(canvas, i, delete_old = True, mode='human')
@@ -380,13 +401,6 @@ if __name__ == '__main__':
             render_gui.update()
     #plt.show()
     render_gui.mainloop()
-    
-    
-    
-    
-    
-    
-    
     
 
     action = np.array([[50_000, 0.0],
