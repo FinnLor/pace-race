@@ -1,8 +1,9 @@
 import os
 from env_PaceRace import PaceRaceEnv
-from stable_baselines3 import A2C
+from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 #from plotting import plot_returns
@@ -11,7 +12,7 @@ from stable_baselines3.common.monitor import Monitor
 ### CONFIGURATION
 config = {'total_timesteps': 300_000,
           'learning_rate': 3E-3,
-          'network_size': [128, 128],
+          'network_size': [64, 64],
           'exploration_final_eps': 0.05,
           'exploration_fraction': 0.8,
           'n_eval_episodes': 20,
@@ -22,14 +23,13 @@ config = {'total_timesteps': 300_000,
 ### ENV SETUP
 env = Monitor(PaceRaceEnv())
 check_env(env, warn=True)
+env = DummyVecEnv([lambda: PaceRaceEnv()])
+env = VecCheckNan(env, raise_exception=True)   
 
 ### MODEL SETUP
-model = A2C('MlpPolicy',
+model = SAC("MlpPolicy",
             env,
-            verbose=0,
-            gamma=1.0,
-            learning_rate=config['learning_rate'],
-            policy_kwargs={'net_arch': config['network_size']})
+            )
 
 ### EVAL INIT MODEL
 print('Random Agent, before training')
