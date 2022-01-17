@@ -5,7 +5,7 @@ import numpy as np
 # from scipy import integrate
 from matplotlib import pyplot as plt
 import gym
-import time as t
+# import time as t
 import tkinter as tk
 # from gym import spaces
 from gym.utils import seeding
@@ -197,7 +197,6 @@ class PaceRaceEnv(gym.Env):
         ######################################################################
         # REWARD SECTION
         # Convert a possible numpy bool to a Python bool
-        
         curr_path_length = self.car01.get_path_length(self.road)
         
         if curr_path_length < self.last_path_length:
@@ -365,10 +364,6 @@ class PaceRaceEnv(gym.Env):
         pass
 
 
-
-
-
-
 if __name__ == '__main__':
     
     g = PaceRaceEnv(CF=49_000, CR=49_000, CT=0.1, ROADWIDTH=30)
@@ -382,10 +377,9 @@ if __name__ == '__main__':
     
     for i in range(2000):
         g.step((0.0001, 1))
-        t.sleep(0.01)
+        # t.sleep(0.01)
         if i % RENDER_ANY == 0:
             g.render(canvas, i, delete_old = True, mode='human')
             render_gui.update()
     #plt.show()
     render_gui.mainloop()
-

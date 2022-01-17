@@ -427,7 +427,7 @@ class Car:
                 
             for intersec_r in intersec_right:
                 dist[idx, 1] = min(dist[idx, 1], sensor_ref.distance(Point(intersec_r))) 
-                          
+
             # Resize sensor distances due to the max length of the sensorline
             if normalized == True:
                 dist[idx, :] = dist[idx, :]/sensor_length
