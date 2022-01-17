@@ -23,12 +23,13 @@ config = {'total_timesteps': 300_000,
 ### ENV SETUP
 env = Monitor(PaceRaceEnv())
 check_env(env, warn=True)
-env = DummyVecEnv([lambda: PaceRaceEnv()])
-env = VecCheckNan(env, raise_exception=True)   
+# env = DummyVecEnv([lambda: PaceRaceEnv()])
+# env = VecCheckNan(env, raise_exception=True)   
 
 ### MODEL SETUP
 model = SAC("MlpPolicy",
             env,
+            verbose=1,
             )
 
 ### EVAL INIT MODEL
@@ -45,7 +46,7 @@ eval_callback = EvalCallback(env,
                              eval_freq=config['eval_freq'],
                              n_eval_episodes=config['n_eval_episodes'],
                              deterministic=True,
-                             render=False)
+                             render=True)
 
 checkpoint_callback = CheckpointCallback(save_freq=config['checkpoint_freq'],
                                          save_path=os.path.join('best', 'checkpoints'),
@@ -57,28 +58,7 @@ model.learn(total_timesteps=config['total_timesteps'],
             callback=[eval_callback, checkpoint_callback])
 
 ### Save Replay-Buffer
-model.save_replay_buffer('Replay_Buffer') # Logo of 1.000.000 timesteps
-
-### PLOTTING
-# here plots
-
-### TEST GAMES
-print('Play 5 games')
-game_counter = 0
-done = True
-while True:
-    if done:
-        game_counter += 1
-        if game_counter > 5:
-            break
-        print()
-        print('Starting new game.')
-        obs = env.reset()
-        
-    action, _state = model.predict(obs)
-    obs, reward, done, info = env.step(action)
-    env.render(mode='console')
-    print()
+# model.save_replay_buffer('Replay_Buffer') # Logo of 1.000.000 timesteps
 
 env.close()
 
