@@ -130,7 +130,6 @@ class Car:
                
         # Set car position 
         self.set_car_pos(x, y, psi, delta)
-        # because env_PaceRace.reset() is called first, velocities and omega is already set        
         
         # Numerical timestamp
         self.cycletime = CT
@@ -185,11 +184,11 @@ class Car:
         self.corners = np.vstack((c1,c2,c3,c4,c5))
            
         # Set sensor end-points
-        s01 = c4 + np.dot(rot_sensor, (0, self.WIDTH) )
-        s03 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*15, self.WIDTH) )
+        s01 = c4 + np.dot(rot_sensor, (0, self.WIDTH*3) )
+        s03 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*30, self.WIDTH*2.5) )
         s05 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*60, 0) )
-        s07 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*15, -self.WIDTH) )
-        s09 = c4 + np.dot(rot_sensor, (0, -self.WIDTH) )
+        s07 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*30, -self.WIDTH*2.5) )
+        s09 = c4 + np.dot(rot_sensor, (0, -self.WIDTH*3) )
         
         # Assign position of sensor to object
         self.s_ref = c4
@@ -329,18 +328,6 @@ class Car:
 
         """
         
-        # Old approach. Does not cover all cases.
-        # max_dist = 0
-        # for row in self.corners:
-        #     dist = road.center_line.distance(Point(row))
-        #     max_dist = max(max_dist, dist)
-   
-        # # check if car exceeds border
-        # if max_dist >= road.ROADWIDTH/2:
-        #     collision = True
-        # else:
-        #     collision = False
-        
         # Get coordinates of left and right lane boundaries 
         left_line_coords = np.array(road.left_line.coords)
         right_line_coords = np.array(road.right_line.coords)
@@ -371,21 +358,6 @@ class Car:
         
         # Check if the intersection area is 1.
         collision = abs(car_polygon.intersection(extended_road_polygon).area - car_polygon.area) > 0.001
-        
-        ###  For debugging. Please don't delete yet.
-        # fig99, ax99 = plt.subplots()
-        # data = np.array(extended_road_polygon.exterior.coords.xy)
-        # ax99.plot(data[0,:], data[1,:], label='extended_road')
-        # ax99.scatter(self.center[0], self.center[1], label = 'car_center')
-        # ax99.scatter(self.corners[:,0], self.corners[:,1], label = 'car_corners')
-        # ax99.scatter(left_line_coords[-1,0], left_line_coords[-1,1], label = 'end_of_road_left')
-        # ax99.scatter(right_line_coords[0,0], right_line_coords[0,1], label = 'end_of_road_right')
-        # ax99.legend()
-        
-        # print('Car')
-        # print(car_polygon.area)
-        # print('Intersec')
-        # print(car_polygon.intersection(extended_road_polygon).area)
         
         return collision
 
@@ -431,6 +403,8 @@ class Car:
             sensor_line = LineString(np.vstack((self.s_ref, row)))
             # Get length of line and set as max. measuring range
             sensor_length = sensor_line.length
+            if sensor_length==0:
+                print(f"row: {row}, s_ref: {self.s_ref}")
             dist[idx, :] = sensor_length
             
             # Check for intersections with the boundaries
@@ -453,22 +427,7 @@ class Car:
                 
             for intersec_r in intersec_right:
                 dist[idx, 1] = min(dist[idx, 1], sensor_ref.distance(Point(intersec_r))) 
-            
-            #---------------------------------------------------------------------
-            # DEBUGGING SECTION
-            if dist[idx,:].any() < 0:
-                print("----------Dist is < 0")
-                # print(road.center_line.project(self.center, normalized = True))
-                print(road.get_path_length(self.center))
-            elif dist[idx,:].any() == 0:
-                print("----------Dist was = 0")
-                print(f"----------SensL is {sensor_length}")
-                if dist[idx,0] == 0: dist[idx,0] = 0.01
-                if dist[idx,1] == 0: dist[idx,1] = 0.01
-                # print(road.center_line.project(self.center, normalized = True))
-                print(road.get_path_length(self.center))
-            #---------------------------------------------------------------------
-                
+                          
             # Resize sensor distances due to the max length of the sensorline
             if normalized == True:
                 dist[idx, :] = dist[idx, :]/sensor_length
@@ -509,8 +468,6 @@ class Car:
         a, delta, JZ = inputs # unpack input and parameter values
         x, y, psi, vlon, vlat, omega = states # unpack previous state values
 
-
-
         dpsidt = omega
         dvlondt = a
         dvlatdt = -omega*vlon + 1/self.M* (-self.CR*math.atan2(vlat-omega*self.LR, vlon) -math.cos(delta)*self.CF*math.atan2(-vlon*math.sin(delta)+math.cos(delta)*vlat+math.cos(delta)*omega*self.LF, vlon*math.cos(delta)+math.sin(delta)*vlat+math.sin(delta)*omega*self.LF))
@@ -537,13 +494,7 @@ class Car:
 
         states = np.concatenate((self.center, np.array([self.psi, self.vlon, self.vlat, self.omega])))
         a, delta = inputs # inputs contains acc and TOTAL steering angle (is calculated in step())        
-
-        try: # calculate rotational inertia
-            R = (self.LF+self.LR)/math.tan(delta) * 1/(math.atan2(math.tan(delta) * self.LR,(self.LF+self.LR)))
-            # R = float(self.vlon)/float(self.omega) # cast because numpy types do not throw exceptions
-            JZ = self.M *R**2
-        except ZeroDivisionError:
-            JZ = np.Inf
+        JZ = 1/12 * self.M * (self.WIDTH**2 + (self.LF+self.LR)**2) # 1/12 * m *(b^2 + c^2)
         
         args = (a,delta,JZ) # acceleration, total steering angle and rotational inertia are given to the model
         res = integrate.solve_ivp(fun=self._car_dynamics, t_span=(self.t0, self.t0+self.cycletime), \
@@ -555,8 +506,7 @@ class Car:
         self.vlat = res.y[4,-1]
         self.omega = res.y[5,-1]
         
-        self.t0 = self.t0+self.cycletime
-               
+        self.t0 = self.t0+self.cycletime            
        
 
 if __name__ == "__main__":
