@@ -60,10 +60,9 @@ class PaceRaceEnv(gym.Env):
         self.car01 = Car(LF=LF, LR=LR, CF=CF, CR=CR, WIDTH=CAR_WIDTH, M=M, P=P,\
                      x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=CT)
 
+        
 
-        # # Actions and Observations
-        # SOLLTE NORMALISIERT WERDEN? 
-
+        # Actions and Observations
 
         #### Reicht es diese Variablen lokal anzulegen? /FL
         self.max_x_position = 10_000
@@ -84,8 +83,8 @@ class PaceRaceEnv(gym.Env):
         self.max_power = P # for accelerating
         self.min_power = -P # for decelerating
 
-        self.max_delta_steering_angle = 3*CT*np.pi/180 # Zeitabhängig. entspricht 3 Grad Lenkwinkel der Räder pro Sekunde
-        self.min_delta_steering_angle = -3*CT*np.pi/180
+        self.max_delta_steering_angle = 30*CT*np.pi/180 # Zeitabhängig. entspricht 3 Grad Lenkwinkel der Räder pro Sekunde
+        self.min_delta_steering_angle = -30*CT*np.pi/180
         
         self.max_total_steering_angle = 45*np.pi/180
         self.min_total_steering_angle = -45*np.pi/180   
@@ -97,16 +96,7 @@ class PaceRaceEnv(gym.Env):
         self.sensordata_max = 1
 
         # Action Space
-        # self.low_action = np.array(
-        #     [self.min_power, self.min_delta_steering_angle], dtype=np.float32
-        # )
-        # self.high_action= np.array(
-        #     [self.max_power, self.max_delta_steering_angle], dtype=np.float32
-        # )
 
-        # self.action_space = gym.spaces.Box(
-        #     low=self.low_action, high=self.high_action, dtype=np.float32 # changes FS: low_action instead low_state etc.
-        # )
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2,), dtype="float32")
 
@@ -135,33 +125,35 @@ class PaceRaceEnv(gym.Env):
     def step(self, action):
         
         self.counter += 1
-        if self.counter%1000 == 0:
+        if self.counter%10000 == 0:
+            print(f"----> {self.counter}")
+        elif self.counter%1000 == 0:
             print("--")
 
         # rescale the normalized actions
-        range_action_Power = self.max_power - self.min_power
+        range_action_Power = self.max_power - self.min_power # b-a
         range_action_delta_delta = self.max_delta_steering_angle - self.min_delta_steering_angle
         range_actions = np.array([range_action_Power, range_action_delta_delta])
-        action_scaled = np.asarray(action) * 0.5 * range_actions # x * (b-a)/2, dot-wise multiplied
+        action_scaled = np.asarray(action) * 0.5 * range_actions + 0.5 * np.array([self.max_power + self.min_power, self.max_delta_steering_angle + self.min_delta_steering_angle]) # x * (b-a)/2 + (b+a)/2, dot-wise multiplied
 
         # unpacking and conversion
         P, delta_delta = action_scaled # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
 
         # Clip steering angle if necessary
-        if delta >self.max_delta_steering_angle:
-            delta = self.max_delta_steering_angle
-        elif delta < self.min_delta_steering_angle:
-            delta = self.min_delta_steering_angle
+        if delta > self.max_total_steering_angle:
+            delta = self.max_total_steering_angle
+        elif delta < self.min_total_steering_angle:
+            delta = self.min_total_steering_angle
         
         # Calculate acceleration
         if P == 0:
             a = 0
         elif self.car01.vlon == 0:
-            a = 9.81*self.MU
-        elif P>0:
+            a = 9.81*self.MU/math.sqrt(2)
+        elif P > 0:
             a = min(P/(self.car01.M*self.car01.vlon), 9.81*self.MU) 
-        elif P<0:
+        elif P < 0:
             a = max(P/(self.car01.M*self.car01.vlon), -9.81*self.MU) 
         else:
             print('Error in calculation of acceleration.')
@@ -176,15 +168,7 @@ class PaceRaceEnv(gym.Env):
         self.car01.set_next_car_position(inputs) # calculate next car position with diff. eq.
 
         # calculate centrifugal force
-        try: ### Works WITHOUT numpy only!!! ################# /FL
-            R = (self.car01.LF+self.car01.LR)/math.tan(delta) * 1/(math.atan2(math.tan(delta) * self.car01.LR,(self.car01.LF+self.car01.LR)))
-            # R = self.car01.vlon/self.car01.omega
-            F_ctfg = self.car01.M * self.car01.omega**2 * R # centrifugal force (alternative formulation)
-            # print(F_ctfg)
-            # F_ctfg = self.car01.omega * self.car01.vlon * self.car01.M # WHY DOES THIS NOT WORK?
-            # print(F_ctfg)
-        except ZeroDivisionError:
-            F_ctfg = 0
+        F_ctfg = self.car01.M * self.car01.omega * self.car01.vlon 
 
         # collision check
         collision_check = self.car01.collision_check(self.road)
@@ -209,16 +193,17 @@ class PaceRaceEnv(gym.Env):
         ######################################################################
         # REWARD SECTION
         # Convert a possible numpy bool to a Python bool
-        done = bool(self.car01.get_path_length(self.road) >= 0.98)
-        reward = 0 # reward wird in jedem step() ausgerechnet? Oder ist das eine Objektvariable, die kumuliert wird? -> Recherche!
+        done = bool(self.car01.get_path_length(self.road) >= 0.999)
+        curr_path_length = self.car01.get_path_length(self.road)
+        
+        if curr_path_length < self.last_path_length:
+            reward = -5
+        else: 
+            reward = -1       
 
-        if not done:
-            # if self.road.get_path_length(self.car01)%0.1 == 0: # jede 10 Prozentpunkte ein Extra-Leckerli ...
-            #     reward += 10
-            reward -= 1.0
-        else:
-            reward = 1000.0
-
+        # update path_length
+        self.last_path_length = curr_path_length
+        
         # get sensordata of a car
         sensdist = self.car01.get_sensordata(self.road, normalized=True)
 
@@ -238,7 +223,7 @@ class PaceRaceEnv(gym.Env):
 
         ### SET BACK CAR TO START POSITION
         self.car01.set_start_pos(self.road) # this sets x, y, psi and delta
-
+        self.last_path_length = 0
 
         self.t0 = 0
 
@@ -391,124 +376,12 @@ if __name__ == '__main__':
     canvas = tk.Canvas(render_gui, width=CANVAS_WIDTH, height=CANVAS_HEIGHT) # canvas is the rendering area
     canvas.pack() # required to visualize the canvas
     
-    for i in range(200):
-        g.step((0.01, 0))
-        #t.sleep(0.01)
+    for i in range(2000):
+        g.step((0.0001, 1))
+        # t.sleep(0.01)
         if i % RENDER_ANY == 0:
             g.render(canvas, i, delete_old = True, mode='human')
-            a = math.sqrt(g.car01.vlat**2 + g.car01.vlon**2)
-            print(a)
             render_gui.update()
     #plt.show()
     render_gui.mainloop()
-    
-
-    action = np.array([[50_000, 0.0],
-                        [50_000, 0.0],
-                        [50_000, 0.0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, -np.pi/16],
-                        [50_000, -np.pi/16],
-                        [50_000, -np.pi/16],
-                        [50_000, -np.pi/16],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0],
-                        [50_000, 0]])
-    
-    # Get data from road
-    x_center_line = np.array(g.road.center_line.coords)[:,0] 
-    y_center_line = np.array(g.road.center_line.coords)[:,1] 
-    x_left_line = np.array(g.road.left_line.coords)[:,0] 
-    y_left_line = np.array(g.road.left_line.coords)[:,1] 
-    x_right_line = np.array(g.road.right_line.coords)[:,0] 
-    y_right_line = np.array(g.road.right_line.coords)[:,1] 
-    # Visualize Road
-    fig4, ax4 = plt.subplots()
-    ax4.plot(x_center_line, y_center_line, label='center_line')
-    ax4.plot(x_left_line, y_left_line, label = 'left_line')
-    ax4.plot(x_right_line, y_right_line, label = 'right_line')
-    delta = 0
-    c = 0
-    for i in action:
-        c +=1
-        print(20*"-")
-        print(f"Iteration {c}")
-        # Add car1 to current figure
-        ax4.scatter(g.car01.center[0], g.car01.center[1], label = 'car1_center')
-        #ax4.scatter(g.car01.corners[:,0], g.car01.corners[:,1], label = 'car1_corners')
-        #ax4.scatter(g.car01.sensors[:,0], g.car01.sensors[:,1], label = 'car1_sensors')
-        #ax4.legend()
-        fig4.suptitle('Road and car1 on start-position')
-        obs, reward, done, info = g.step(i)
-        print(f"delta: {g.car01.delta}")
-        print(f"psi: {g.car01.psi}")
-        print(f"vlon: {g.car01.vlon}")
-        print(f"vlat: {g.car01.vlat}")
-        
-    
-    # g.render(mode='human')
-    # for i in range(50):
-    #     g.step((0, 0))
-    #     g.render(mode='human')
-    # plt.show()
-
+   
