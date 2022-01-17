@@ -5,7 +5,7 @@ import numpy as np
 # from scipy import integrate
 from matplotlib import pyplot as plt
 import gym
-import time as t
+# import time as t
 import tkinter as tk
 # from gym import spaces
 from gym.utils import seeding
@@ -96,6 +96,7 @@ class PaceRaceEnv(gym.Env):
         self.sensordata_max = 1
 
         # Action Space
+
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2,), dtype="float32")
 
@@ -377,10 +378,10 @@ if __name__ == '__main__':
     
     for i in range(2000):
         g.step((0.0001, 1))
-        t.sleep(0.01)
+        # t.sleep(0.01)
         if i % RENDER_ANY == 0:
             g.render(canvas, i, delete_old = True, mode='human')
             render_gui.update()
     #plt.show()
     render_gui.mainloop()
-
+   
