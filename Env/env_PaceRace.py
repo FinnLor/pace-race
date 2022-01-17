@@ -166,33 +166,38 @@ class PaceRaceEnv(gym.Env):
         inputs = (a, delta) # must be a tuple
         self.car01.set_next_car_position(inputs) # calculate next car position with diff. eq.
 
-        # calculate centrifugal force
-        F_ctfg = self.car01.M * self.car01.omega * self.car01.vlon 
+        # check if car has crossed the finish line
+        done = bool(self.car01.get_path_length(self.road) >= 0.98)
 
-        # collision check
-        collision_check = self.car01.collision_check(self.road)
-        if collision_check:
-            psi_error = self.car01.set_resume_pos(self.road)
-            if psi_error == False:
-                print(f"Collision: {self.counter}")
-            # print("CAR CRASH!!!")
+        if done == False:
 
-        # check critical centrifugal force
-        Fmax = self.car01.M * 9.81 * self.MU # radius of traction circle
-        Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
-        if Fres > Fmax:
-            #print("Haftkraft überschritten!")
-            psi_error = self.car01.set_resume_pos(self.road)
-            if psi_error == False:
-                print(f"MaxAcc: {self.counter}") # probably reset() would be a better penalty
-        else:
-            #print("Haftkraft: -- OK --")
-            pass
+            # collision check
+            collision_check = self.car01.collision_check(self.road)
+            if collision_check:
+                psi_error = self.car01.set_resume_pos(self.road)
+                if psi_error == False:
+                    print(f"Collision: {self.counter}")
+                # print("CAR CRASH!!!")
+    
+            # calculate centrifugal force
+            F_ctfg = self.car01.M * self.car01.omega * self.car01.vlon 
+    
+            # check critical centrifugal force
+            Fmax = self.car01.M * 9.81 * self.MU # radius of traction circle
+            Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
+            if Fres > Fmax:
+                #print("Haftkraft überschritten!")
+                psi_error = self.car01.set_resume_pos(self.road)
+                if psi_error == False:
+                    print(f"MaxAcc: {self.counter}") # probably reset() would be a better penalty
+            else:
+                #print("Haftkraft: -- OK --")
+                pass
 
         ######################################################################
         # REWARD SECTION
         # Convert a possible numpy bool to a Python bool
-        done = bool(self.car01.get_path_length(self.road) >= 0.999)
+        
         curr_path_length = self.car01.get_path_length(self.road)
         
         if curr_path_length < self.last_path_length:

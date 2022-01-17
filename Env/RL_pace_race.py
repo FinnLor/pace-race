@@ -46,7 +46,7 @@ eval_callback = EvalCallback(env,
                              eval_freq=config['eval_freq'],
                              n_eval_episodes=config['n_eval_episodes'],
                              deterministic=True,
-                             render=True)
+                             render=False)
 
 checkpoint_callback = CheckpointCallback(save_freq=config['checkpoint_freq'],
                                          save_path=os.path.join('best', 'checkpoints'),
