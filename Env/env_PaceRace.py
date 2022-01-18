@@ -49,18 +49,21 @@ class PaceRaceEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
 
 
-    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
+
+
+    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=10_000, ROADWIDTH=8):
 
         # super(PaceRaceEnv, self).__init__() # FS: have seen this in other code ... purpose?
         self.counter = 0
+ 
+        self.render_step = 0 # NEU
+        self.delete_old = True # NEU    
  
         self.MU = MU # Reibzahl, trockener Asphalt
         self.ROADWIDTH = ROADWIDTH
 
         self.car01 = Car(LF=LF, LR=LR, CF=CF, CR=CR, WIDTH=CAR_WIDTH, M=M, P=P,\
                      x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=CT)
-
-        
 
         # Actions and Observations
 
@@ -75,7 +78,7 @@ class PaceRaceEnv(gym.Env):
         self.min_yaw_angle = -2*np.pi
 
         self.max_velocity_lon = 100
-        self.min_velocity_lon = -100
+        self.min_velocity_lon = 0
 
         self.max_velocity_lat = 100
         self.min_velocity_lat = -100
@@ -126,7 +129,7 @@ class PaceRaceEnv(gym.Env):
         self.counter += 1
         if self.counter%10000 == 0:
             print(f"----> {self.counter}")
-        elif self.counter%1000 == 0:
+        elif self.counter%2000 == 0:
             print("--")
 
         # rescale the normalized actions
@@ -139,45 +142,43 @@ class PaceRaceEnv(gym.Env):
         P, delta_delta = action_scaled # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
 
+        # Calculate acceleration
+        if P == 0:
+            a = 0
+        elif P > 0 and self.car01.vlon == 0:
+            a = 9.81*self.MU/math.sqrt(2)
+        elif P < 0 and self.car01.vlon == 0:
+            a = -9.81*self.MU/math.sqrt(2)
+        elif P > 0 and self.car01.vlon != 0:
+            a = min(P/(self.car01.M*abs(self.car01.vlon)), 9.81*self.MU/math.sqrt(2)) 
+        elif P < 0 and self.car01.vlon != 0:
+            a = max(P/(self.car01.M*abs(self.car01.vlon)), -9.81*self.MU/math.sqrt(2)) 
+        else:
+            print('Error in calculation of acceleration.')
+
         # Clip steering angle if necessary
         if delta > self.max_total_steering_angle:
             delta = self.max_total_steering_angle
         elif delta < self.min_total_steering_angle:
-            delta = self.min_total_steering_angle
-        
-        # Calculate acceleration
-        if P == 0:
-            a = 0
-        elif self.car01.vlon == 0:
-            a = 9.81*self.MU/math.sqrt(2)
-        elif P > 0:
-            a = min(P/(self.car01.M*self.car01.vlon), 9.81*self.MU) 
-        elif P < 0:
-            a = max(P/(self.car01.M*self.car01.vlon), -9.81*self.MU) 
-        else:
-            print('Error in calculation of acceleration.')
-            
-        # # clip acceleration if velocity small or zero
-        # if self.car01.vlon < 0.5:
-        #     a = max(P/(self.car01.M*self.car01.vlon), 0)
-                    
+            delta = self.min_total_steering_angle              
+      
         # move car via dynamic model
         states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]))) # states before moving
         inputs = (a, delta) # must be a tuple
         self.car01.set_next_car_position(inputs) # calculate next car position with diff. eq.
 
         # check if car has crossed the finish line
-        done = bool(self.car01.get_path_length(self.road) >= 0.98)
+        done = bool(self.car01.get_path_length(self.road) >= 0.999)
 
         if done == False:
 
             # collision check
             collision_check = self.car01.collision_check(self.road)
             if collision_check:
+                print(f"--got resumed! at {self.counter}")
                 psi_error = self.car01.set_resume_pos(self.road)
                 if psi_error == False:
                     print(f"Collision: {self.counter}")
-                # print("CAR CRASH!!!")
     
             # calculate centrifugal force
             F_ctfg = self.car01.M * self.car01.omega * self.car01.vlon 
@@ -186,13 +187,11 @@ class PaceRaceEnv(gym.Env):
             Fmax = self.car01.M * 9.81 * self.MU # radius of traction circle
             Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
             if Fres > Fmax:
+                print(f"--got resumed! at {self.counter}")
                 #print("Haftkraft überschritten!")
                 psi_error = self.car01.set_resume_pos(self.road)
                 if psi_error == False:
                     print(f"MaxAcc: {self.counter}") # probably reset() would be a better penalty
-            else:
-                #print("Haftkraft: -- OK --")
-                pass
 
         ######################################################################
         # REWARD SECTION
@@ -240,10 +239,11 @@ class PaceRaceEnv(gym.Env):
         observation = np.concatenate((states, np.min(sensdist, axis = 1)), axis=None) 
         return np.array([observation], dtype=np.float32).flatten()
 
-    def render(self, canvas, iteration, delete_old, mode='human'):
-        
+    def render(self, mode='human'):
         if mode == 'human':    
-            if iteration == 0:   
+            if self.render_step == 0:  # NEU ERSETZT
+            
+
                 
                 # get canvas height for up-down-flipping
                 self.canvas = canvas
@@ -330,9 +330,11 @@ class PaceRaceEnv(gym.Env):
             x_s09 = self.factor * np.add(x_s09, -self.min_x)
             y_s09 = self.factor * np.add(y_s09, -self.min_y)
             s09_line_data = list((np.ravel(([x_s09,y_s09]),'F'))) # list is neccessary for a correct separation with comma
-
+            
+            
             # generate car and sensor data
-            if iteration !=0 and delete_old == True:
+            # if iteration !=0 and delete_old == True: 
+            if self.render_step !=0 and self.delete_old == True: # NEU ERSETZT
                 self.canvas.delete(self.car_polygon)
                 self.canvas.delete(self.car_s01)
                 self.canvas.delete(self.car_s03)
@@ -346,11 +348,14 @@ class PaceRaceEnv(gym.Env):
             self.car_s07 = self.canvas.create_line(s07_line_data, fill="black", width=1) 
             self.car_s09 = self.canvas.create_line(s09_line_data, fill="black", width=1) 
   
+            self.render_step += 1 # NEU
+            
         else:
         #elif mode == '...'
             pass
             # plt.scatter(self.state[0], self.state[1], s=20, marker='o', color='g')
-
+            
+            
     # Current Version of gym
     # def seed(self):
     #     pass
@@ -368,18 +373,25 @@ if __name__ == '__main__':
     
     g = PaceRaceEnv(CF=49_000, CR=49_000, CT=0.1, ROADWIDTH=30)
     g.reset()
+    RENDER_ANY = 1
+    # set up render environment
     render_gui = tk.Tk() # parent window for canvas
     CANVAS_WIDTH = 1800
     CANVAS_HEIGHT = 1000
-    RENDER_ANY = 1
     canvas = tk.Canvas(render_gui, width=CANVAS_WIDTH, height=CANVAS_HEIGHT) # canvas is the rendering area
     canvas.pack() # required to visualize the canvas
     
-    for i in range(2000):
-        g.step((0.0001, 1))
-        # t.sleep(0.01)
+    for i in range(500):
+        g.step((0.3, 0.000))
+        print(i)
         if i % RENDER_ANY == 0:
-            g.render(canvas, i, delete_old = True, mode='human')
+            g.render(mode='human')
+            render_gui.update()     
+    for i in range(500):
+        g.step((-0.3, 0.00))
+        print(500+i)
+        if i % RENDER_ANY == 0:
+            g.render(mode='human')
             render_gui.update()
-    #plt.show()
+    # plt.show()
     render_gui.mainloop()
