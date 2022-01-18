@@ -491,21 +491,26 @@ class Car:
         None.
 
         """
+        a, delta = inputs # inputs contains acc and TOTAL steering angle (is calculated in step())  
 
+        if self.vlon + a*self.cycletime < 1e-5: # Euler-check, as proposed by Finn et al.
+            a = 0
         states = np.concatenate((self.center, np.array([self.psi, self.vlon, self.vlat, self.omega])))
-        a, delta = inputs # inputs contains acc and TOTAL steering angle (is calculated in step())        
         JZ = 1/12 * self.M * (self.WIDTH**2 + (self.LF+self.LR)**2) # 1/12 * m *(b^2 + c^2)
         
+        
         args = (a,delta,JZ) # acceleration, total steering angle and rotational inertia are given to the model
-        res = integrate.solve_ivp(fun=self._car_dynamics, t_span=(self.t0, self.t0+self.cycletime), \
-                                  y0=states, args=[args], \
+        res = integrate.solve_ivp(fun=self._car_dynamics, t_span=(self.t0, self.t0+self.cycletime),
+                                  method='BDF',
+                                  y0=states, 
+                                  args=[args],
                                   t_eval=None) # old: t_eval=np.linspace(self.t0, self.t0+self.cycletime, 10) --> caused a bug
         psi = res.y[2,-1] % (2*np.pi)
         self.set_car_pos(res.y[0,-1], res.y[1,-1], psi, delta) # arguments: x,y,psi,delta
         self.vlon = res.y[3,-1]
         self.vlat = res.y[4,-1]
         self.omega = res.y[5,-1]
-        
+                
         self.t0 = self.t0+self.cycletime            
        
 
