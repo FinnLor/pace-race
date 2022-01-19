@@ -64,6 +64,8 @@ print('End of training')
 env.close()
 model.save("sac_pace_race") # save model like this
 
+model.save("sac_pace_race") # save model like this
+
 ''' 
 model.save("a2c_pace_race") # save model like this
 model = A2C.load("a2c_pace_race") # load model like this

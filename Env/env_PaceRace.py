@@ -58,6 +58,9 @@ class PaceRaceEnv(gym.Env):
         self.render_step = 0 # NEU
         self.delete_old = True # NEU    
  
+        self.render_step = 0 # NEU
+        self.delete_old = True # NEU    
+ 
         self.MU = MU # Reibzahl, trockener Asphalt
         self.ROADWIDTH = ROADWIDTH
 
@@ -335,8 +338,7 @@ class PaceRaceEnv(gym.Env):
     #         x_s09 = self.factor * np.add(x_s09, -self.min_x)
     #         y_s09 = self.factor * np.add(y_s09, -self.min_y)
     #         s09_line_data = list((np.ravel(([x_s09,y_s09]),'F'))) # list is neccessary for a correct separation with comma
-            
-            
+                       
     #         # generate car and sensor data
     #         # if iteration !=0 and delete_old == True: 
     #         if self.render_step !=0 and self.delete_old == True: # NEU ERSETZT
