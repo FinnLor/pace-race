@@ -102,16 +102,16 @@ class PaceRaceEnv(gym.Env):
             low=-1, high=1, shape=(2,), dtype="float32")
 
         # Observation Space
-        # observation: [x, y, psi, vlon, vlat, omega, total_steering_angle, sensor1, sensor3, sensor5, sensor7, sensor9]
+        # observation: [psi, vlon, vlat, omega, total_steering_angle, sensor1, sensor3, sensor5, sensor7, sensor9]
         self.low_state = np.array(
-            [self.min_x_position, self.min_y_position, self.min_yaw_angle, \
+            [self.min_yaw_angle, \
              self.min_velocity_lon, self.min_velocity_lat, \
              self.min_omega, self.min_total_steering_angle,
              self.sensordata_min, self.sensordata_min,
              self.sensordata_min, self.sensordata_min, self.sensordata_min], dtype=np.float32
         )
         self.high_state = np.array(
-            [self.max_x_position, self.max_y_position, self.max_yaw_angle, \
+            [self.max_yaw_angle, \
              self.max_velocity_lon, self.max_velocity_lat, \
              self.max_omega, self.max_total_steering_angle,
              self.sensordata_max, self.sensordata_max, \
@@ -228,7 +228,8 @@ class PaceRaceEnv(gym.Env):
         sensdist = self.car01.get_sensordata(self.road, normalized=True)
 
         info = dict()
-        states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]))) # states after moving
+        # states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]))) # states after moving
+        states = np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])
         observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None)
         return np.array([observation], dtype=np.float32).flatten(), reward, done, info
 
@@ -257,6 +258,7 @@ class PaceRaceEnv(gym.Env):
         states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])), axis=None)
         # append delta to states and concatenate the sensdist array to its end (compare with the setup/order of an 'observation' array, line 106)
         # observation = np.concatenate((np.append(states, self.car01.delta), sensdist), axis=None) 
+        states = np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])
         observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None) 
         return np.array([observation], dtype=np.float32).flatten()
 
