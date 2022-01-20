@@ -494,7 +494,8 @@ class Car:
         a, delta = inputs # inputs contains acc and TOTAL steering angle (is calculated in step())  
 
         if self.vlon + a*self.cycletime < 1e-5: # Euler-check, as proposed by Finn et al.
-            a = 0
+            a = (1e-5 - self.vlon)/self.cycletime
+
         states = np.concatenate((self.center, np.array([self.psi, self.vlon, self.vlat, self.omega])))
         JZ = 1/12 * self.M * (self.WIDTH**2 + (self.LF+self.LR)**2) # 1/12 * m *(b^2 + c^2)
         
