@@ -20,7 +20,7 @@ class Render():
         self.canvas = tk.Canvas(self.render_gui, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT) # canvas is the rendering area
         self.canvas.pack() # required to visualize the canvas    
         self.render_step = 0
-        
+
     def update(self, env):
         
         if self.render_step == 0:  # NEU ERSETZT

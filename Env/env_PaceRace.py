@@ -51,7 +51,7 @@ class PaceRaceEnv(gym.Env):
 
 
 
-    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=50_000, ROADWIDTH=8):
+    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
 
         # super(PaceRaceEnv, self).__init__() # FS: have seen this in other code ... purpose?
         
