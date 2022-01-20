@@ -51,7 +51,7 @@ class PaceRaceEnv(gym.Env):
 
 
 
-    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
+    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=50_000, ROADWIDTH=8):
 
         # super(PaceRaceEnv, self).__init__() # FS: have seen this in other code ... purpose?
         
@@ -106,13 +106,15 @@ class PaceRaceEnv(gym.Env):
         self.low_state = np.array(
             [self.min_x_position, self.min_y_position, self.min_yaw_angle, \
              self.min_velocity_lon, self.min_velocity_lat, \
-             self.min_omega, self.sensordata_min, self.sensordata_min, \
+             self.min_omega, self.min_total_steering_angle,
+             self.sensordata_min, self.sensordata_min,
              self.sensordata_min, self.sensordata_min, self.sensordata_min], dtype=np.float32
         )
         self.high_state = np.array(
             [self.max_x_position, self.max_y_position, self.max_yaw_angle, \
              self.max_velocity_lon, self.max_velocity_lat, \
-             self.max_omega, self.sensordata_max, self.sensordata_max, \
+             self.max_omega, self.max_total_steering_angle,
+             self.sensordata_max, self.sensordata_max, \
              self.sensordata_max, self.sensordata_max, self.sensordata_max], dtype=np.float32
         )
 
@@ -124,6 +126,7 @@ class PaceRaceEnv(gym.Env):
         self.seed()
 
     def step(self, action):
+        got_resumed = False
         
         self.counter += 1
         if self.counter%10000 == 0:
@@ -140,6 +143,12 @@ class PaceRaceEnv(gym.Env):
         # unpacking and conversion
         P, delta_delta = action_scaled # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
+        
+        # Clip steering angle if necessary
+        if delta > self.max_total_steering_angle:
+            delta = self.max_total_steering_angle
+        elif delta < self.min_total_steering_angle:
+            delta = self.min_total_steering_angle  
 
         # Calculate acceleration
         if P == 0:
@@ -147,19 +156,19 @@ class PaceRaceEnv(gym.Env):
         elif P > 0 and self.car01.vlon == 0:
             a = 9.81*self.MU/math.sqrt(2)
         elif P < 0 and self.car01.vlon == 0:
-            a = -9.81*self.MU/math.sqrt(2)
+            a = -9.81*self.MU/math.sqrt(2) # problematic?
         elif P > 0 and self.car01.vlon != 0:
-            a = min(P/(self.car01.M*abs(self.car01.vlon)), 9.81*self.MU/math.sqrt(2)) 
+            a = min(P/(self.car01.M*self.car01.vlon), 9.81*self.MU/math.sqrt(2)) 
         elif P < 0 and self.car01.vlon != 0:
-            a = max(P/(self.car01.M*abs(self.car01.vlon)), -9.81*self.MU/math.sqrt(2)) 
+            a = max(P/(self.car01.M*self.car01.vlon), -9.81*self.MU/math.sqrt(2)) 
         else:
             print('Error in calculation of acceleration.')
-
-        # Clip steering angle if necessary
-        if delta > self.max_total_steering_angle:
-            delta = self.max_total_steering_angle
-        elif delta < self.min_total_steering_angle:
-            delta = self.min_total_steering_angle              
+            
+        # # new clip acceleration if velocity small or zero
+        # if self.car01.vlon < 1:
+        #     if self.car01.vlon <= 0: # alt: == 0 # vlat hier ggf mitkorrigieren
+        #         self.car01.vlon = 0.1 # ORIGINAL: 0.001
+        #     a = max(P/(float(self.car01.M*abs(self.car01.vlon))), 0.1) # ORIGINAL 0
       
         # move car via dynamic model
         states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]))) # states before moving
@@ -174,6 +183,7 @@ class PaceRaceEnv(gym.Env):
             # collision check
             collision_check = self.car01.collision_check(self.road)
             if collision_check:
+                got_resumed = True
                 print(f"--got resumed! at {self.counter}")
                 psi_error = self.car01.set_resume_pos(self.road)
                 if psi_error == False:
@@ -186,6 +196,7 @@ class PaceRaceEnv(gym.Env):
             Fmax = self.car01.M * 9.81 * self.MU # radius of traction circle
             Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
             if Fres > Fmax:
+                got_resumed = True
                 print(f"--got resumed! at {self.counter}")
                 #print("Haftkraft überschritten!")
                 psi_error = self.car01.set_resume_pos(self.road)
@@ -194,13 +205,21 @@ class PaceRaceEnv(gym.Env):
 
         ######################################################################
         # REWARD SECTION
+        reward = 0
+        
         # Convert a possible numpy bool to a Python bool
         curr_path_length = self.car01.get_path_length(self.road)
         
-        if curr_path_length < self.last_path_length:
-            reward = -5
-        else: 
-            reward = -1       
+        if curr_path_length > self.last_path_length: # reward driving forward
+            reward = reward + 3
+        
+        if curr_path_length < self.last_path_length: # punish driving backward
+            reward = reward - 5
+
+        reward = reward - 1 # punish time on track
+            
+        if got_resumed: # punish violation (collision or force-check)
+            reward = reward - 4
 
         # update path_length
         self.last_path_length = curr_path_length
@@ -210,7 +229,7 @@ class PaceRaceEnv(gym.Env):
 
         info = dict()
         states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega]))) # states after moving
-        observation = np.concatenate((states, np.min(sensdist, axis = 1)), axis=None)
+        observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None)
         return np.array([observation], dtype=np.float32).flatten(), reward, done, info
 
     # Current Version of gym
@@ -238,7 +257,7 @@ class PaceRaceEnv(gym.Env):
         states = np.concatenate((self.car01.center, np.array([self.car01.psi, self.car01.vlon, self.car01.vlat, self.car01.omega])), axis=None)
         # append delta to states and concatenate the sensdist array to its end (compare with the setup/order of an 'observation' array, line 106)
         # observation = np.concatenate((np.append(states, self.car01.delta), sensdist), axis=None) 
-        observation = np.concatenate((states, np.min(sensdist, axis = 1)), axis=None) 
+        observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None) 
         return np.array([observation], dtype=np.float32).flatten()
 
     def render(self, mode='human'):

@@ -10,11 +10,11 @@ from stable_baselines3.common.monitor import Monitor
 #from plotting import plot_returns
 
 ### CONFIGURATION
-config = {'total_timesteps': 300000,
+config = {'total_timesteps': 40000,
           'learning_rate': 3E-3,
-          'n_eval_episodes': 10,
+          'n_eval_episodes': 20,
           'eval_freq': 5000,
-          'checkpoint_freq': 20000}
+          'checkpoint_freq': 5000}
 
 
 ### ENV SETUP
@@ -52,13 +52,14 @@ checkpoint_callback = CheckpointCallback(save_freq=config['checkpoint_freq'],
 
 
 
-callbacks = CallbackList([checkpoint_callback, eval_callback])
+# callbacks = CallbackList([checkpoint_callback, eval_callback])
 # callback = SaveOnBestTrainingRewardCallback(check_freq=2000, log_dir=log_dir)
 
 ### TRAINING
 print('Start training')
-model.learn(total_timesteps=config['total_timesteps'],
-            callback=callbacks)
+model.learn(100_000)
+# model.learn(total_timesteps=config['total_timesteps'],
+#             callback=[eval_callback, checkpoint_callback])
 print('End of training')
 
 env.close()
