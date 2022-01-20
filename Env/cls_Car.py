@@ -495,7 +495,6 @@ class Car:
 
         if self.vlon + a*self.cycletime < 1e-5: # Euler-check, as proposed by Finn et al.
             a = (1e-5 - self.vlon)/self.cycletime
-            # a = 0
             
         states = np.concatenate((self.center, np.array([self.psi, self.vlon, self.vlat, self.omega])))
         JZ = 1/12 * self.M * (self.WIDTH**2 + (self.LF+self.LR)**2) # 1/12 * m *(b^2 + c^2)
