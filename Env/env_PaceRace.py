@@ -220,9 +220,9 @@ class PaceRaceEnv(gym.Env):
         # get sensordata of a car
         sensdist = self.car01.get_sensordata(self.road, normalized=True)
 
-        info = dict()
         states = np.array([self.car01.vlon, self.car01.vlat, self.car01.omega])
         observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None)
+        info = {"obs": observation,"act": action}
         return np.array([observation], dtype=np.float32).flatten(), reward, done, info
 
     # Current Version of gym

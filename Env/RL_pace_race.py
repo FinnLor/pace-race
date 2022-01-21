@@ -9,6 +9,8 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 #from plotting import plot_returns
 
+from LogTraining import CustomTrainingLogCallback, load_Log # Logging
+
 ### CONFIGURATION
 config = {'total_timesteps': 40000,
           'learning_rate': 3E-3,
@@ -57,13 +59,17 @@ checkpoint_callback = CheckpointCallback(save_freq=config['checkpoint_freq'],
 
 ### TRAINING
 print('Start training')
-model.learn(100_000)
+model.learn(10, callback=CustomTrainingLogCallback(info_keywords = ('obs', 'act'), log_freq_epoch=10_000, log_freq_step=2))
 # model.learn(total_timesteps=config['total_timesteps'],
 #             callback=[eval_callback, checkpoint_callback])
 print('End of training')
 
 env.close()
 model.save("sac_pace_race") # save model like this
+
+
+# Load Log
+Log = load_Log('TrainLog/myLog')
 
 ''' 
 model.save("a2c_pace_race") # save model like this
