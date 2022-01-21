@@ -6,10 +6,8 @@ Created on Dec 2021
 """
 
 from shapely.geometry import LineString, Point
-import math as m
 import numpy as np
-import random as rnd
-from scipy.interpolate import interp1d # Needed for alternative idea to generate the road.
+from scipy.interpolate import interp1d 
 
 
 class Road:
@@ -40,46 +38,68 @@ class Road:
     """
 
 
-    def __init__(self, ROADWIDTH=8, NPOINTS: int = 1000):
+    def __init__(self, ROADWIDTH=8, ROADLENGTH: int = 10, NPOINTS: int = 1000, 
+                 custom_center_line = None):
         """
         
         Initializes object.
-        Creates a simple, randomly parameterized trajectory in R2, which is set as the lane centerline (self. center_line). 
+        Creates a simple, randomly parameterized, or custom trajectory in R2, which is set as the lane centerline (self. center_line). 
         The left and right lane boundaries (self.left_line and self.right_line) are derived using the width of the roadway (self.ROADWIDTH).
+
+        ...
 
         Parameters
         ----------
         ROADWIDTH : int or float, optional
             Width of the roadway. Non-negative value. The default is 8.
+        ROADLENGTH : int, optional
+            Discrete factor for length of random road. Valid inputs: {2, 3, 4, 5, 6, 7, 8, 9, 10}. The default is 10.
         NPOINTS : int, optional
-            Number of points used to define the lane centerline. The default is 1000.
+            Number of points used to define the lane centerline, when ROADLENGTH >  and custom_center_line = None. The default is 1000.
+        custom_center_line : np.ndarray with size [nx2], optional
+            Custom trajectory in R2 [x,y]-value-pairs. The default is None.
 
         Returns
         -------
         None.
-        
+
         """
         
         # Check inputs
         assert ROADWIDTH >= 0, "ROADWIDTH has to be non-negative!"
+        
+        # Random road
+        if custom_center_line is None:
+            # Check inputs for random road
+            valid_ROADLENGTH = {2, 3, 4, 5, 6, 7, 8, 9, 10}
+            if ROADLENGTH not in valid_ROADLENGTH:
+                raise ValueError("ROADLENGTH must be one of %r." % valid_ROADLENGTH)
+            
+            # Generate random road
+            x = np.cumsum(np.random.rand(ROADLENGTH)+0.3)*10*ROADLENGTH 
+            y = np.cumsum((np.random.rand(ROADLENGTH)-0.5)*2)*10*ROADLENGTH               
+            if ROADLENGTH < 3:
+                f = interp1d(x, y, kind='linear')
+                x = np.linspace(x[0], x[ROADLENGTH-1], 2)
+            else: 
+                f = interp1d(x, y, kind='quadratic')
+                x = np.linspace(x[0], x[ROADLENGTH-1], NPOINTS)
+            y = f(x)
+            line_data = np.transpose([x,y])
+        
+        # Custom road
+        else:    
+            # Check inputs for custom road
+            assert (custom_center_line.type==np.ndarray and 
+                    custom_center_line.ndim == 2 and
+                    custom_center_line.shape[1] == 2) , "custom_center_line has to be [nx2] np.ndarray!"
 
+            line_data = custom_center_line
+        
         # Assign properties
         self.ROADWIDTH = ROADWIDTH
-    
-        # Build parametric function of road-centerline in x,y,n-system
-        # n = np.linspace(0.5, 2*m.pi, NPOINTS)
-        # x = m.pow((-1), rnd.randrange(1,3,1)) * (n + 3*rnd.uniform(0,1)*np.tan(0.2*n)) *100
-        # y = (1./n + rnd.uniform(0,1)*3.*np.cos(n)*np.power(np.sin(n),2)) *100
-        
-        # Alternative idea that allows more diversity.
-        x = np.cumsum(np.random.rand(10)+0.3)*100
-        y = np.cumsum((np.random.rand(10)-0.5)*2)*100
-        f = interp1d(x, y, kind='quadratic')
-        x = np.linspace(x[0], x[9], NPOINTS)
-        y = f(x)
-        
+            
         # Generate lane centerline and lane boundaries.
-        line_data = np.transpose([x,y])
         self.center_line = LineString(line_data)
         self.left_line = self.center_line.parallel_offset(self.ROADWIDTH/2,"left",join_style=1)
         self.right_line = self.center_line.parallel_offset(self.ROADWIDTH/2,"right",join_style=1)
@@ -114,7 +134,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     
     # Create object
-    road = Road()
+    road = Road(ROADLENGTH = 3)
         
     # Get data from object
     x_center_line = np.array(road.center_line.coords)[:,0] 
