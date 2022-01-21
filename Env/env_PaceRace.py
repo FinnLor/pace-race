@@ -196,6 +196,8 @@ class PaceRaceEnv(gym.Env):
                     print(f"MaxAcc: {self.counter}") # probably reset() would be a better penalty
             
             violation = collision_check or force_exceeded # a bool to check if limits were violated
+        else:
+            violation = False
             
         ######################################################################
         # REWARD SECTION
