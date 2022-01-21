@@ -1,3 +1,4 @@
 /__pycache__/
 /Env/__pycache__/
 /Env/example_ReplayBuffer.pkl
+/Env/TrainLog/
