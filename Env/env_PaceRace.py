@@ -51,12 +51,16 @@ class PaceRaceEnv(gym.Env):
 
 
 
-    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADWIDTH=8):
+    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADLENGTH = 10, custom_center_line = None, custom_roadwidth=None):
+        # ROADLENGTH : int, optional. Discrete factor for length of random road. Valid inputs: {2, 3, 4, 5, 6, 7, 8, 9, 10}
+        # custom_center_line : np.ndarray with size [nx2], optional. Custom trajectory in R2 [x,y]-value-pairs. The default is None.
 
         # super(PaceRaceEnv, self).__init__() # FS: have seen this in other code ... purpose?
         
         self.MU = MU # Reibzahl, trockener Asphalt
-        self.ROADWIDTH = ROADWIDTH
+        self.roadwidth = custom_roadwidth
+        self.ROADLENGTH = ROADLENGTH
+        self.custom_center_line = custom_center_line
 
         self.car01 = Car(LF=LF, LR=LR, CF=CF, CR=CR, WIDTH=CAR_WIDTH, M=M, P=P,\
                      x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=CT)
@@ -234,8 +238,11 @@ class PaceRaceEnv(gym.Env):
         self.counter = 0
         print("**reset**")
         ### CONSTRUCT NEW ROAD
-        self.ROADWIDTH = round(random.uniform(self.car01.WIDTH*5,self.car01.WIDTH*10), 2)
-        self.road = Road(ROADWIDTH=self.ROADWIDTH, NPOINTS = 1000)
+        if self.custom_center_line == None:
+            self.roadwidth = round(random.uniform(self.car01.WIDTH*5,self.car01.WIDTH*10), 2)
+            self.road = Road(ROADWIDTH=self.roadwidth, ROADLENGTH = self.ROADLENGTH, NPOINTS = 1000)
+        else:
+            self.road = Road(ROADWIDTH=self.roadwidth, custom_center_line = self.custom_center_line)
 
         ### SET BACK CAR TO START POSITION
         self.car01.set_start_pos(self.road) # this sets x, y, psi and delta
@@ -269,7 +276,7 @@ class PaceRaceEnv(gym.Env):
 
 if __name__ == '__main__':
     
-    g = PaceRaceEnv(CF=49_000, CR=49_000, CT=0.1, ROADWIDTH=30)
+    g = PaceRaceEnv(CF=49_000, CR=49_000, CT=0.1, custom_roadwidth=30)
     g.reset()
     
     for i in range(500):
