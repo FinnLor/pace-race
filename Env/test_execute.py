@@ -8,7 +8,7 @@ from stable_baselines3 import SAC
 from env_PaceRace import PaceRaceEnv
 from our_render import Render
 
-env = PaceRaceEnv(P=1000)
+env = PaceRaceEnv()
 # model = load("SAC_model")
 c = 0
 done = False
