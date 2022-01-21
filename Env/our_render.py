@@ -22,7 +22,7 @@ class Render():
         self.render_step = 0
         self.delete_old = True
 
-    def update(self, env):
+    def update(self, env, done):
         
         if self.render_step == 0:  # NEU ERSETZT
             
@@ -130,9 +130,8 @@ class Render():
       
         self.render_step += 1 # NEU
         
-        self.render_gui.update()
-        # self.render_gui.mainloop()
-        
-        def show(self):
-            self.render_gui.mainloop()
+        if done:
+            print("End of race")
             self.render_gui.destroy()
+        else:
+            self.render_gui.update()

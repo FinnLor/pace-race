@@ -171,7 +171,7 @@ class PaceRaceEnv(gym.Env):
         # check if car has crossed the finish line
         done = bool(self.car01.get_path_length(self.road) >= 0.999)
         
-        print(f"input: {action_scaled[0]:09.2F} ||  acceleration: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(self.car01.get_path_length(self.road),4)} || done: {done}")
+        print(f"input: {action_scaled[0]:09.2F} ||  acceleration: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(self.car01.get_path_length(self.road),4)} || done: {done} || eprew: {self.episode_reward}")
 
         if done == False:
 
@@ -216,12 +216,13 @@ class PaceRaceEnv(gym.Env):
 
         reward = reward - 3 # punish time on track
             
-        # if got_resumed: # punish violation (collision or force-check)
-        #     reward = reward - 20
+        if got_resumed: # punish violation (collision or force-check)
+            reward = reward - 20
             
         if done:
             reward = reward + 500
 
+        self.episode_reward += reward
         # update path_length
         self.last_path_length = curr_path_length
         
@@ -238,7 +239,7 @@ class PaceRaceEnv(gym.Env):
     #     super().reset(seed=seed)
 
     def reset(self): # FOR OLD VERSION OF GYM
-
+        self.episode_reward = 0
         self.counter = 0
         print("**reset**")
         ### CONSTRUCT NEW ROAD
