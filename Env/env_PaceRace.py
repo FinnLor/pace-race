@@ -64,6 +64,8 @@ class PaceRaceEnv(gym.Env):
 
         self.car01 = Car(LF=LF, LR=LR, CF=CF, CR=CR, WIDTH=CAR_WIDTH, M=M, P=P,\
                      x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=CT)
+            
+        self.Fmax = M * 9.81 * MU # radius of traction circle
 
         # Actions and Observations
 
@@ -124,7 +126,6 @@ class PaceRaceEnv(gym.Env):
         self.seed()
 
     def step(self, action):
-        got_resumed = False
         
         self.counter += 1
         if self.counter%10000 == 0:
@@ -162,61 +163,63 @@ class PaceRaceEnv(gym.Env):
         else:
             print('Error in calculation of acceleration.')
             
-        # # new clip acceleration if velocity small or zero
-        # if self.car01.vlon < 1:
-        #     if self.car01.vlon <= 0: # alt: == 0 # vlat hier ggf mitkorrigieren
-        #         self.car01.vlon = 0.1 # ORIGINAL: 0.001
-        #     a = max(P/(float(self.car01.M*abs(self.car01.vlon))), 0.1) # ORIGINAL 0
-      
         # move car via dynamic model
         inputs = (a, delta) # must be a tuple
         self.car01.set_next_car_position(inputs) # calculate next car position with diff. eq.
-
+        
         # check if car has crossed the finish line
-        done = bool(self.car01.get_path_length(self.road) >= 0.999)
+        curr_path_length = self.car01.get_path_length(self.road)
+        done = bool(curr_path_length >= 0.999)
 
         if done == False:
 
             # collision check
             collision_check = self.car01.collision_check(self.road)
-            if collision_check:
-                got_resumed = True
-                print(f"--got resumed! at {self.counter}")
-                psi_error = self.car01.set_resume_pos(self.road)
-                if psi_error == False:
-                    print(f"Collision: {self.counter}")
-    
+            
             # calculate centrifugal force
             F_ctfg = self.car01.M * self.car01.omega * self.car01.vlon 
-    
-            # check critical centrifugal force
-            Fmax = self.car01.M * 9.81 * self.MU # radius of traction circle
             Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
-            if Fres > Fmax:
-                got_resumed = True
+            force_exceeded = Fres > self.Fmax
+            
+            violation = collision_check or force_exceeded # a bool to check if limits were violated
+            
+            if violation:
                 print(f"--got resumed! at {self.counter}")
-                #print("Haftkraft überschritten!")
-                psi_error = self.car01.set_resume_pos(self.road)
-                if psi_error == False:
-                    print(f"MaxAcc: {self.counter}") # probably reset() would be a better penalty
-
+                resume_successful = self.car01.set_resume_pos(self.road)
+                if resume_successful == False:
+                    print(f"ViolationError: {self.counter}")
+    
+        else:
+            violation = False
+            
         ######################################################################
         # REWARD SECTION
         reward = 0
-        
-        # Convert a possible numpy bool to a Python bool
-        curr_path_length = self.car01.get_path_length(self.road)
-        
-        if curr_path_length > self.last_path_length: # reward driving forward
-            reward = reward + 3
-        
-        if curr_path_length < self.last_path_length: # punish driving backward
-            reward = reward - 5
 
-        reward = reward - 1 # punish time on track
+        reward -= 3 # penalize time on track
+        
+        if done:
+            reward += 2500
+        
+        if self.counter > 3000 and not done: # stop after a maximum of 3000 iterations, this implies a penalty of -2000 from #1
+            done = True
+            reward += curr_path_length * 2000 # if stopped by exceeding time limit, reward proportionally to achieved progress
+        
+        if violation: # penalize violation (collision or force-check)
+            reward -= 200
             
-        if got_resumed: # punish violation (collision or force-check)
-            reward = reward - 4
+        # if a < 0:
+        #     reward = reward - 2
+        
+        # if curr_path_length - self.last_path_length > 0.2: # reward driving forward
+        #     reward = reward + 3
+        
+        # if curr_path_length < self.last_path_length: # punish driving backward
+        #     reward = reward - 5
+        
+        self.episode_reward += reward
+        
+        print(f"input: {action_scaled[0]:09.2F} ||  acceleration: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || done: {done} || eprew: {self.episode_reward} || iter: {self.counter}")
 
         # update path_length
         self.last_path_length = curr_path_length
@@ -234,7 +237,7 @@ class PaceRaceEnv(gym.Env):
     #     super().reset(seed=seed)
 
     def reset(self): # FOR OLD VERSION OF GYM
-
+        self.episode_reward = 0
         self.counter = 0
         print("**reset**")
         ### CONSTRUCT NEW ROAD

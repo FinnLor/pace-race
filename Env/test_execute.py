@@ -12,22 +12,17 @@ env = PaceRaceEnv(P=1000)
 # model = load("SAC_model")
 c = 0
 done = False
-model = SAC.load("C://Users//felix//Desktop//sac_pace_race.zip")
+model = SAC.load("models//sac_pace_race_FS_02_210122.zip")
 # model = SAC.load("C://Users//felix//sciebo2//General//Studium Master//M.Sc. Maschinenbau//3. Semester//OKS//pace-race//Env//sac_pace_race.zip")
 print('Starting new game.')
 obs = env.reset() # get initial obs
 display = Render()
-display.update(env)
+display.update(env, done)
 while True:
-    c += 1
-    print(c)    
-    action, _state = model.predict(obs) # agent, get next action from last obs
-    # print(action[0], obs[3])
+    # c+=1
+    # print(c)
     # action = env.action_space.sample() # random
-    obs, reward, done, info = env.step(action) # input action, get next obs
     # obs, reward, done, info = env.step((0.001,0.1)) # manual
-    if done:
-        display.show()
-        print("End of race")
-        break # end if done
-    display.update(env) # render that current obs
+    action, _state = model.predict(obs) # agent, get next action from last obs
+    obs, reward, done, info = env.step(action) # input action, get next obs
+    display.update(env, done) # render that current obs
