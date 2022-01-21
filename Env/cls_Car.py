@@ -442,27 +442,27 @@ class Car:
         
         Parameters
         ----------
-        t : TYPE
-            DESCRIPTION.
-        states : TYPE
-            DESCRIPTION.
-        inputs : TYPE
-            DESCRIPTION.
+        t : scalar
+            Required for the numerical integration.
+        states : array_like, shape (n,)
+            Initial state.
+        inputs : tuple
+            Additional arguments (inputs, parameters).
 
         Returns
         -------
-        dxdt : TYPE
-            DESCRIPTION.
-        dydt : TYPE
-            DESCRIPTION.
-        dpsidt : TYPE
-            DESCRIPTION.
-        dvlondt : TYPE
-            DESCRIPTION.
-        dvlatdt : TYPE
-            DESCRIPTION.
-        domegadt : TYPE
-            DESCRIPTION.
+        dxdt : float
+            Change of global x-position w.r.t. time.
+        dydt : float
+            Change of global y-position w.r.t. time.
+        dpsidt : float
+            Change of global yaw angle w.r.t. time.
+        dvlondt : float
+            Change of longitudinal velocity w.r.t. time.
+        dvlatdt : float
+            Change of lateral velocity w.r.t. time.
+        domegadt : float
+            Change of angular velocity w.r.t. center of mass and w.r.t. time.
 
         """
         a, delta, JZ = inputs # unpack input and parameter values
@@ -480,11 +480,18 @@ class Car:
 
     def set_next_car_position(self, inputs):
         """
-
+        Calling this method passes the inputs to the internally invoked 
+        system of differential equations. They are numerically integrated for 
+        the specified cycletime. The method then uses the results to set the 
+        new state variables of the Car object.
+        
+        ...
+        
         Parameters
         ----------
-        inputs : TYPE
-            DESCRIPTION.
+        inputs : tuple
+            Inputs into the system of differential equations, 
+            containing acceleration and total steering angle.
 
         Returns
         -------

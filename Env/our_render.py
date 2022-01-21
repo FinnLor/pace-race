@@ -20,8 +20,9 @@ class Render():
         self.canvas = tk.Canvas(self.render_gui, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT) # canvas is the rendering area
         self.canvas.pack() # required to visualize the canvas    
         self.render_step = 0
+        self.delete_old = True
 
-    def update(self, env):
+    def update(self, env, done):
         
         if self.render_step == 0:  # NEU ERSETZT
             
@@ -113,7 +114,7 @@ class Render():
         
         # generate car and sensor data
         # if iteration !=0 and delete_old == True: 
-        if self.render_step !=0 and env.delete_old == True: # NEU ERSETZT
+        if self.render_step !=0 and self.delete_old == True: # NEU ERSETZT
             self.canvas.delete(self.car_polygon)
             self.canvas.delete(self.car_s01)
             self.canvas.delete(self.car_s03)
@@ -129,9 +130,8 @@ class Render():
       
         self.render_step += 1 # NEU
         
-        self.render_gui.update()
-        # self.render_gui.mainloop()
-        
-        def show(self):
-            self.render_gui.mainloop()
+        if done:
+            print("End of race")
             self.render_gui.destroy()
+        else:
+            self.render_gui.update()
