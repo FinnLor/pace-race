@@ -170,6 +170,8 @@ class PaceRaceEnv(gym.Env):
 
         # check if car has crossed the finish line
         done = bool(self.car01.get_path_length(self.road) >= 0.999)
+        
+        print(f"input: {action_scaled[0]:09.2F} ||  acceleration: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(self.car01.get_path_length(self.road),4)} || done: {done}")
 
         if done == False:
 
@@ -203,16 +205,22 @@ class PaceRaceEnv(gym.Env):
         # Convert a possible numpy bool to a Python bool
         curr_path_length = self.car01.get_path_length(self.road)
         
-        if curr_path_length > self.last_path_length: # reward driving forward
-            reward = reward + 3
+        if a < 0:
+            reward = reward - 2
         
-        if curr_path_length < self.last_path_length: # punish driving backward
-            reward = reward - 5
+        # if curr_path_length - self.last_path_length > 0.2: # reward driving forward
+        #     reward = reward + 3
+        
+        # if curr_path_length < self.last_path_length: # punish driving backward
+        #     reward = reward - 5
 
-        reward = reward - 1 # punish time on track
+        reward = reward - 3 # punish time on track
             
-        if got_resumed: # punish violation (collision or force-check)
-            reward = reward - 4
+        # if got_resumed: # punish violation (collision or force-check)
+        #     reward = reward - 20
+            
+        if done:
+            reward = reward + 500
 
         # update path_length
         self.last_path_length = curr_path_length
