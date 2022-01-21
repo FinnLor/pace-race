@@ -65,7 +65,7 @@ model.learn(10, callback=CustomTrainingLogCallback(info_keywords = ('obs', 'act'
 print('End of training')
 
 env.close()
-model.save("sac_pace_race") # save model like this
+model.save("models//sac_pace_race") # save model like this
 
 
 # Load Log
