@@ -208,7 +208,7 @@ class PaceRaceEnv(gym.Env):
         if done:
             reward += 2500
         
-        if self.counter > 2000 and not done: # stop after a maximum of 2000 iterations, this implies a penalty of -2000 from #1
+        if self.counter > 4000 and not done: # stop after a maximum of 2000 iterations, this implies a penalty of -2000 from #1
             done = True
             reward += curr_path_length * 2000 # if stopped by exceeding time limit, reward proportionally to achieved progress
         
@@ -226,7 +226,7 @@ class PaceRaceEnv(gym.Env):
         
         self.episode_reward += reward
         
-        print(f"input: {action_scaled[0]:09.2F} ||  acceleration: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || done: {done} || eprew: {self.episode_reward}")
+        print(f"input: {action_scaled[0]:09.2F} ||  acceleration: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || done: {done} || eprew: {self.episode_reward} || iter: {self.counter}")
 
         # update path_length
         self.last_path_length = curr_path_length

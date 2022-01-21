@@ -19,6 +19,8 @@ obs = env.reset() # get initial obs
 display = Render()
 display.update(env, done)
 while True:
+    # c+=1
+    # print(c)
     # action = env.action_space.sample() # random
     # obs, reward, done, info = env.step((0.001,0.1)) # manual
     action, _state = model.predict(obs) # agent, get next action from last obs
