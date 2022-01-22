@@ -59,7 +59,7 @@ checkpoint_callback = CheckpointCallback(save_freq=config['checkpoint_freq'],
 
 ### TRAINING
 print('Start training')
-model.learn(100_000, callback=CustomTrainingLogCallback(info_keywords = ('obs', 'act'), log_freq_epoch=10_000, log_freq_step=2))
+model.learn(100_000, callback=CustomTrainingLogCallback(info_keywords = ('obs', 'act'), log_freq_epoch=1_000, log_freq_step=1))
 # model.learn(total_timesteps=config['total_timesteps'],
 #             callback=[eval_callback, checkpoint_callback])
 print('End of training')

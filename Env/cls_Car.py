@@ -223,7 +223,7 @@ class Car:
         dy = path[1, 1] - y
         psi = np.arctan2(dy, dx)
         self.set_car_pos(x, y, psi, 0) # x, y, psi, delta
-        self.vlon = 0
+        self.vlon = 1e-5
         self.vlat = 0
         self.omega = 0
                   
@@ -276,7 +276,7 @@ class Car:
         
         # Set car-position
         self.set_car_pos(resume_pos[0], resume_pos[1], psi, 0) # x, y, psi, delta
-        self.vlon = 0
+        self.vlon = 1e-5
         self.vlat = 0
         self.omega = 0
         return True
