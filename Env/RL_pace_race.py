@@ -15,7 +15,7 @@ config = {'total_timesteps': 100_000,
 
 
 ### ENV SETUP
-env = Monitor(PaceRaceEnv(verbose = 1), filename=config['monitor_log_path'])
+env = Monitor(PaceRaceEnv(verbose = 2), filename=config['monitor_log_path'])
 check_env(env, warn=True)
 
 
