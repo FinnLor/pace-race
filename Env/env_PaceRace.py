@@ -36,14 +36,14 @@ class PaceRaceEnv(gym.Env):
 
 
 
-    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADLENGTH = 10, verbose = 0, custom_center_line = None, custom_roadwidth=None):
+    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, SENS_SCALE=1, CT=0.1, MU=1.0, P=100_000, ROADLENGTH = 10, verbose = 0, custom_center_line = None, custom_roadwidth=None):
         # ROADLENGTH : int, optional. Discrete factor for length of random road. Valid inputs: {2, 3, 4, 5, 6, 7, 8, 9, 10}
         # custom_center_line : np.ndarray with size [nx2], optional. Custom trajectory in R2 [x,y]-value-pairs. The default is None.
 
 
         # Initialize and assign car
         self.car01 = Car(LF=LF, LR=LR, CF=CF, CR=CR, WIDTH=CAR_WIDTH, M=M, P=P,\
-                             x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=CT)
+                             x=0, y=0, psi=0, delta=0, SENS_SCALE=SENS_SCALE, CT=CT)
                     
         # Assign other properties
         self.MU = MU
