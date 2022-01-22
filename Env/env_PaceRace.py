@@ -1,27 +1,12 @@
 import math
 import random
-# from typing import Optional
 import numpy as np
-# from scipy import integrate
 from matplotlib import pyplot as plt
 import gym
-# import time as t
-import tkinter as tk
-# from gym import spaces
 from gym.utils import seeding
 from cls_Car import Car
 from cls_Road import Road
-from shapely.geometry import LineString, Point, Polygon
 
-
-### alles in SI-Basiseinheiten
-## ToDo:    realistischen Default-Wert für JZ
-##          Quelle für MU und CF/CR
-
-
-### alles in SI-Basiseinheiten
-## ToDo:    realistischen Default-Wert für JZ
-##          Quelle für MU und CF/CR
 
 
 class PaceRaceEnv(gym.Env):
@@ -51,24 +36,29 @@ class PaceRaceEnv(gym.Env):
 
 
 
-    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADLENGTH = 10, custom_center_line = None, custom_roadwidth=None):
+    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, CT=0.1, MU=1.0, P=100_000, ROADLENGTH = 10, verbose = 0, custom_center_line = None, custom_roadwidth=None):
         # ROADLENGTH : int, optional. Discrete factor for length of random road. Valid inputs: {2, 3, 4, 5, 6, 7, 8, 9, 10}
         # custom_center_line : np.ndarray with size [nx2], optional. Custom trajectory in R2 [x,y]-value-pairs. The default is None.
 
-        # super(PaceRaceEnv, self).__init__() # FS: have seen this in other code ... purpose?
-        self.num_episodes = -1
-        self.MU = MU # Reibzahl, trockener Asphalt
+
+        # Initialize and assign car
+        self.car01 = Car(LF=LF, LR=LR, CF=CF, CR=CR, WIDTH=CAR_WIDTH, M=M, P=P,\
+                             x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=CT)
+                    
+        # Assign other properties
+        self.MU = MU
         self.roadwidth = custom_roadwidth
         self.ROADLENGTH = ROADLENGTH
         self.custom_center_line = custom_center_line
+        self.verbose = verbose
 
-        self.car01 = Car(LF=LF, LR=LR, CF=CF, CR=CR, WIDTH=CAR_WIDTH, M=M, P=P,\
-                     x=0, y=0, psi=0, delta=0, SENS_SCALE=1, CT=CT)
-            
-        self.Fmax = M * 9.81 * MU # radius of traction circle
-
+        # Radius of traction circle            
+        self.Fmax = M * 9.81 * MU 
+        
+        # Initialize counter
+        self.num_episodes = -1
+        
         # Actions and Observations
-
         self.max_x_position = 10_000
         self.min_x_position = -10_000
 
@@ -93,18 +83,17 @@ class PaceRaceEnv(gym.Env):
         self.max_total_steering_angle = 45*np.pi/180
         self.min_total_steering_angle = -45*np.pi/180   
 
-        self.max_omega = np.finfo(np.float32).max   # ist implizit vorhanden durch v_max u delta_max. kann raus, muss überall angepasst werden.
+        self.max_omega = np.finfo(np.float32).max   
         self.min_omega = np.finfo(np.float32).min
 
         self.sensordata_min = 0
         self.sensordata_max = 1
 
-        # Action Space
+        # Normalized action Space [power, delta_steering_angle]
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2,), dtype="float32")
 
-        # Observation Space
-        # observation: [vlon, vlat, omega, total_steering_angle, sensor1, sensor3, sensor5, sensor7, sensor9]
+        # Observation Space [vlon, vlat, omega, total_steering_angle, sensor1, sensor3, sensor5, sensor7, sensor9]
         self.low_state = np.array(
             [self.min_velocity_lon, self.min_velocity_lat, \
              self.min_omega, self.min_total_steering_angle,
@@ -127,19 +116,13 @@ class PaceRaceEnv(gym.Env):
 
     def step(self, action):
         
-        self.num_iterations += 1
-        if self.num_iterations%10000 == 0:
-            print(f"----> {self.num_iterations}")
-        elif self.num_iterations%2000 == 0:
-            print("--")
-
-        # rescale the normalized actions
+        # Rescale the normalized actions
         range_action_Power = self.max_power - self.min_power # b-a
         range_action_delta_delta = self.max_delta_steering_angle - self.min_delta_steering_angle
         range_actions = np.array([range_action_Power, range_action_delta_delta])
         action_scaled = np.asarray(action) * 0.5 * range_actions + 0.5 * np.array([self.max_power + self.min_power, self.max_delta_steering_angle + self.min_delta_steering_angle]) # x * (b-a)/2 + (b+a)/2, dot-wise multiplied
 
-        # unpacking and conversion
+        # Unpacking and conversion
         P, delta_delta = action_scaled # unpack RL action variables
         delta = self.car01.delta + delta_delta # calculate new total steering angle
         
@@ -152,7 +135,7 @@ class PaceRaceEnv(gym.Env):
         # Calculate acceleration
         if P == 0:
             a = 0
-        elif P > 0 and self.car01.vlon == 0:
+        elif P > 0 and self.car01.vlon == 0:                    ## DAS SOLLTEN WIR NOCH ANPASSEN, da gar nicht alle Fälle auftreten dürfen!
             a = 9.81*self.MU/math.sqrt(2)
         elif P < 0 and self.car01.vlon == 0:
             a = -9.81*self.MU/math.sqrt(2) # problematic?
@@ -161,39 +144,42 @@ class PaceRaceEnv(gym.Env):
         elif P < 0 and self.car01.vlon != 0:
             a = max(P/(self.car01.M*self.car01.vlon), -9.81*self.MU/math.sqrt(2)) 
         else:
-            print('Error in calculation of acceleration.')
+            raise NotImplementedError('Error in calculation of acceleration.')
             
-        # move car via dynamic model
+        # Move car via dynamic model
         inputs = (a, delta) # must be a tuple
         self.car01.set_next_car_position(inputs) # calculate next car position with diff. eq.
         
-        # check if car has crossed the finish line
+        # Check if car has crossed the finish line (99,9% of roadlength)
         curr_path_length = self.car01.get_path_length(self.road)
         done = bool(curr_path_length >= 0.999)
 
+        # Check for chash
         if done == False:
-
-            # collision check
+            # Collision check
             collision_check = self.car01.collision_check(self.road)
             
-            # calculate centrifugal force
+            # Check whether centrifugal force to high
             F_ctfg = self.car01.M * self.car01.omega * self.car01.vlon 
             Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
             force_exceeded = Fres > self.Fmax
             
-            violation = collision_check or force_exceeded # a bool to check if limits were violated
+            # Bool to check whether limits were violated
+            violation = collision_check or force_exceeded 
             
+            # Set car to resume-position, when violation
             if violation:
-                print(f"--got resumed! at {self.num_iterations}")
                 resume_successful = self.car01.set_resume_pos(self.road)
+                if self.verbose != 0:
+                    print(f"--got resumed! at {self.num_iterations}")
                 if resume_successful == False:
-                    print(f"ViolationError: {self.num_iterations}")
-    
+                    raise NotImplementedError(f"Calculation of psi failed: {self.num_iterations}")
         else:
             violation = False
             
         ######################################################################
-        # REWARD SECTION
+        ####################### --- REWARD SECTION --- ####################### 
+        ######################################################################
         reward = 0
         #1
         reward -= 3 # penalize time on track
@@ -221,67 +207,76 @@ class PaceRaceEnv(gym.Env):
         
         self.episode_reward += reward
         
-        print(f"input: {action_scaled[0]:09.2F} ||  acceleration: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || done: {done} || eprew: {self.episode_reward} || iter: {self.num_iterations}")
-
-        # update path_length
-        self.last_path_length = curr_path_length
+        # Update path_length
+        self.last_path_length = curr_path_length # NEWER USED! Delete later
         
-        # get sensordata of a car
+        # Get sensordata of a car
         sensdist = self.car01.get_sensordata(self.road, normalized=True)
-
-        states = np.array([self.car01.vlon, self.car01.vlat, self.car01.omega])
-        observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None) # add MU for param study
+        
+        # Summarize observations
+        observation = np.concatenate((np.array([self.car01.vlon, self.car01.vlat, self.car01.omega, self.car01.delta]), np.min(sensdist, axis = 1)), axis=None) # add MU for param study
+        
+        # Update info-dict
         info = {"obs": observation,"act": action}
+        
+        # Print to terminal
+        if self.verbose == 2:
+            print(f"action_scaled: {action_scaled[0]:09.2F} ||  a: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || done: {done} || eprew: {self.episode_reward} || iter: {self.num_iterations}")
+        if self.verbose != 0:
+            if self.num_iterations%10000 == 0:
+                print(f"----> {self.num_iterations}")
+            elif self.num_iterations%2000 == 0:
+                print("--")
+                
+        # Update counter
+        self.num_iterations += 1
+                
         return np.array([observation], dtype=np.float32).flatten(), reward, done, info
 
-    # Current Version of gym
-    # def reset(self, seed: Optional[int] = None):
-    #     super().reset(seed=seed)
 
-    def reset(self): # FOR OLD VERSION OF GYM
-        print(10*"---" + "**reset**" + 10*"---")    
+    def reset(self): 
+        
+        # Print to terminal
+        if self.verbose != 0:
+            print(10*"---" + "**reset**" + 10*"---")    
     
+        # Reset counter        
         self.episode_reward = 0 # track cumulative reward per episode
-        self.num_iterations = -1
+        self.num_iterations = 0
         self.num_episodes += 1
          
         # self.MU = round(random.uniform(0.3,1.0),2) # variable friction coefficient
         
-        ### CONSTRUCT NEW ROAD
+        # Construct new road
         if self.custom_center_line == None:
             self.roadwidth = round(random.uniform(self.car01.WIDTH*5,self.car01.WIDTH*10), 2)
             self.road = Road(ROADWIDTH=self.roadwidth, ROADLENGTH = self.ROADLENGTH, NPOINTS = 1000)
         else:
             self.road = Road(ROADWIDTH=self.roadwidth, custom_center_line = self.custom_center_line)
 
-        ### SET BACK CAR TO START POSITION
-        self.car01.set_start_pos(self.road) # this sets x, y, psi and delta
+        # Set car to start-position
+        self.car01.set_start_pos(self.road) 
         self.last_path_length = 0
 
         self.t0 = 0
 
-        # read sensordata
+        # Get sensordata
         sensdist = self.car01.get_sensordata(self.road) # reads distances for each sensor in an array
         
-        # pack up
-        states = np.array([self.car01.vlon, self.car01.vlat, self.car01.omega])
-        observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None) # add MU for param study
+        # Pack up
+        observation = np.concatenate((np.array([self.car01.vlon, self.car01.vlat, self.car01.omega, self.car01.delta]), np.min(sensdist, axis = 1)), axis=None) # add MU for param study
         return np.array([observation], dtype=np.float32).flatten()
 
     def render(self, mode='human'):
+        raise NotImplementedError('Please use custom, external rendering.')
         pass            
             
-    # Current Version of gym
-    # def seed(self):
-    #     pass
-
-    # FOR OLD VERSION OF GYM
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
     def close(self):
-        pass
+        print('End of training')
 
 
 if __name__ == '__main__':

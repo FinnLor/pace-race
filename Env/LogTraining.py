@@ -18,7 +18,7 @@ class CustomTrainingLogCallback(BaseCallback):
 
     :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
     """
-    def __init__(self,  info_keywords: Tuple[str, ...], log_dir: str = 'TrainLog', log_name: str = 'myLog', 
+    def __init__(self,  info_keywords: Tuple[str, ...], log_dir: str = 'TrainLog', log_name: str = 'CustomLog', 
                  log_freq_epoch: int = 1_000, log_freq_step: int = 1, verbose=0):
         
         super(CustomTrainingLogCallback, self).__init__(verbose)
@@ -48,7 +48,6 @@ class CustomTrainingLogCallback(BaseCallback):
         # Open file
         self.file_handler = open(filename, "wt", newline="\n")
         self.file_handler.write("#%s\n" % json.dumps(header))
-        #self.logger = csv.DictWriter(self.file_handler, fieldnames=('epoch','iter','obsFL', 'actFL'))
         self.logger = csv.DictWriter(self.file_handler, fieldnames=("epoch","iter") + self.info_keywords)
         self.logger.writeheader()
         self.file_handler.flush()
