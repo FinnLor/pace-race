@@ -57,6 +57,7 @@ class PaceRaceEnv(gym.Env):
         
         # Initialize counter
         self.num_episodes = -1
+        self.counter = 0
         
         # Actions and Observations
         self.max_x_position = 10_000
@@ -186,7 +187,7 @@ class PaceRaceEnv(gym.Env):
         #2
         if done:
             reward += 2500
-        #3
+        #3                       
         if self.num_iterations > 2000 and not done: # stop after a maximum o n iterations, this implies a penalty of -3n from #1
             done = True
             reward += curr_path_length * 2000 # if stopped by exceeding time limit, reward proportionally to achieved progress
@@ -220,8 +221,10 @@ class PaceRaceEnv(gym.Env):
         info = {"obs": observation,"act": action}
         
         # Print to terminal
-        if self.verbose == 2:
-            print(f"action_scaled: {action_scaled[0]:09.2F} ||  a: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || done: {done} || eprew: {self.episode_reward} || iter: {self.num_iterations}")
+        if self.verbose == 1: 
+            print(f"=== counter: {self.counter} === ")
+        elif self.verbose == 2:
+            print(f"action_scaled: {action_scaled[0]:09.2F} ||  a: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || done: {done} || eprew: {self.episode_reward} || iter: {self.num_iterations}, || counter: {self.counter}")
         if self.verbose != 0:
             if self.num_iterations%10000 == 0:
                 print(f"----> {self.num_iterations}")
@@ -230,6 +233,7 @@ class PaceRaceEnv(gym.Env):
                 
         # Update counter
         self.num_iterations += 1
+        self.counter += 1
                 
         return np.array([observation], dtype=np.float32).flatten(), reward, done, info
 
