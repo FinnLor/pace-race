@@ -56,7 +56,7 @@ class PaceRaceEnv(gym.Env):
         # custom_center_line : np.ndarray with size [nx2], optional. Custom trajectory in R2 [x,y]-value-pairs. The default is None.
 
         # super(PaceRaceEnv, self).__init__() # FS: have seen this in other code ... purpose?
-        
+        self.num_episodes = -1
         self.MU = MU # Reibzahl, trockener Asphalt
         self.roadwidth = custom_roadwidth
         self.ROADLENGTH = ROADLENGTH
@@ -127,10 +127,10 @@ class PaceRaceEnv(gym.Env):
 
     def step(self, action):
         
-        self.counter += 1
-        if self.counter%10000 == 0:
-            print(f"----> {self.counter}")
-        elif self.counter%2000 == 0:
+        self.num_iterations += 1
+        if self.num_iterations%10000 == 0:
+            print(f"----> {self.num_iterations}")
+        elif self.num_iterations%2000 == 0:
             print("--")
 
         # rescale the normalized actions
@@ -184,10 +184,10 @@ class PaceRaceEnv(gym.Env):
             violation = collision_check or force_exceeded # a bool to check if limits were violated
             
             if violation:
-                print(f"--got resumed! at {self.counter}")
+                print(f"--got resumed! at {self.num_iterations}")
                 resume_successful = self.car01.set_resume_pos(self.road)
                 if resume_successful == False:
-                    print(f"ViolationError: {self.counter}")
+                    print(f"ViolationError: {self.num_iterations}")
     
         else:
             violation = False
@@ -195,18 +195,20 @@ class PaceRaceEnv(gym.Env):
         ######################################################################
         # REWARD SECTION
         reward = 0
-
+        #1
         reward -= 3 # penalize time on track
-        
+        #2
         if done:
             reward += 2500
-        
-        if self.counter > 3000 and not done: # stop after a maximum of 3000 iterations, this implies a penalty of -2000 from #1
+        #3
+        if self.num_iterations > 2000 and not done: # stop after a maximum o n iterations, this implies a penalty of -3n from #1
             done = True
             reward += curr_path_length * 2000 # if stopped by exceeding time limit, reward proportionally to achieved progress
-        
+        #4
         if violation: # penalize violation (collision or force-check)
-            reward -= 200
+            reward -= (50 + self.num_episodes/100)
+        #5    
+        reward += 0.3*self.car01.vlon
             
         # if a < 0:
         #     reward = reward - 2
@@ -219,7 +221,7 @@ class PaceRaceEnv(gym.Env):
         
         self.episode_reward += reward
         
-        print(f"input: {action_scaled[0]:09.2F} ||  acceleration: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || done: {done} || eprew: {self.episode_reward} || iter: {self.counter}")
+        print(f"input: {action_scaled[0]:09.2F} ||  acceleration: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || done: {done} || eprew: {self.episode_reward} || iter: {self.num_iterations}")
 
         # update path_length
         self.last_path_length = curr_path_length
@@ -228,7 +230,7 @@ class PaceRaceEnv(gym.Env):
         sensdist = self.car01.get_sensordata(self.road, normalized=True)
 
         states = np.array([self.car01.vlon, self.car01.vlat, self.car01.omega])
-        observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None)
+        observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None) # add MU for param study
         info = {"obs": observation,"act": action}
         return np.array([observation], dtype=np.float32).flatten(), reward, done, info
 
@@ -237,9 +239,14 @@ class PaceRaceEnv(gym.Env):
     #     super().reset(seed=seed)
 
     def reset(self): # FOR OLD VERSION OF GYM
-        self.episode_reward = 0
-        self.counter = 0
-        print("**reset**")
+        print(10*"---" + "**reset**" + 10*"---")    
+    
+        self.episode_reward = 0 # track cumulative reward per episode
+        self.num_iterations = -1
+        self.num_episodes += 1
+         
+        # self.MU = round(random.uniform(0.3,1.0),2) # variable friction coefficient
+        
         ### CONSTRUCT NEW ROAD
         if self.custom_center_line == None:
             self.roadwidth = round(random.uniform(self.car01.WIDTH*5,self.car01.WIDTH*10), 2)
@@ -258,7 +265,7 @@ class PaceRaceEnv(gym.Env):
         
         # pack up
         states = np.array([self.car01.vlon, self.car01.vlat, self.car01.omega])
-        observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None) 
+        observation = np.concatenate((np.append(states, self.car01.delta), np.min(sensdist, axis = 1)), axis=None) # add MU for param study
         return np.array([observation], dtype=np.float32).flatten()
 
     def render(self, mode='human'):

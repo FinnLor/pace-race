@@ -39,10 +39,10 @@ class Render():
             yr = np.subtract(self.Y, yr)
             
             # get data for best adaption of the road into the canvas
-            self.min_x = min(min(x)-env.ROADWIDTH, min(x)+env.ROADWIDTH)
-            max_x = max(max(x)-env.ROADWIDTH, max(x)+env.ROADWIDTH)
-            self.min_y = min(min(y)-env.ROADWIDTH, min(y)+env.ROADWIDTH)
-            max_y = max(max(y)-env.ROADWIDTH, max(y)+env.ROADWIDTH)
+            self.min_x = min(min(x)-env.roadwidth, min(x)+env.roadwidth)
+            max_x = max(max(x)-env.roadwidth, max(x)+env.roadwidth)
+            self.min_y = min(min(y)-env.roadwidth, min(y)+env.roadwidth)
+            max_y = max(max(y)-env.roadwidth, max(y)+env.roadwidth)
             delta_x = max_x - self.min_x
             delta_y = max_y - self.min_y
             self.factor_x = self.CANVAS_WIDTH / delta_x
