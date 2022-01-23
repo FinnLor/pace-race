@@ -89,16 +89,10 @@ class Road:
         
         # Custom road
         else:    
-            # Check inputs for custom road
-            # comment because "AttributeError: 'numpy.ndarray' object has no attribute 'type'"
-            # assert (custom_center_line.type==np.ndarray and 
-            #         custom_center_line.ndim == 2 and
-            #         custom_center_line.shape[1] == 2) , "custom_center_line has to be [nx2] np.ndarray!"
-            
+            # Check inputs for custom road         
             assert (isinstance(custom_center_line,np.ndarray) and
                     custom_center_line.ndim == 2 and
                     custom_center_line.shape[1] == 2) , "custom_center_line has to be [nx2] np.ndarray!"
-
             line_data = custom_center_line
         
         # Assign properties
