@@ -93,9 +93,6 @@ class Road:
             assert (isinstance(custom_center_line,np.ndarray) and
                     custom_center_line.ndim == 2 and
                     custom_center_line.shape[1] == 2) , "custom_center_line has to be [nx2] np.ndarray!"
-
-            f = interp1d(custom_center_line[:,0], custom_center_line[:,1], kind='quadratic')
-            x = 
             line_data = custom_center_line
         
         # Assign properties
