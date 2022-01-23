@@ -42,4 +42,4 @@ model.save(config['save_path_models'])
 
 
 # Load Log
-#Log = load_Log('TrainLog/myLog')
+#Log = load_Log('TrainLog/CustomLog')
