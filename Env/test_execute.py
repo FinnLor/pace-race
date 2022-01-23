@@ -13,6 +13,7 @@ env = PaceRaceEnv()
 c = 0
 done = False
 model = SAC.load("models/sac_pace_race_FS_02_210122.zip")
+# model = SAC.load("models/sac_pace_race_bad01.zip")
 # model = SAC.load("C://Users//felix//sciebo2//General//Studium Master//M.Sc. Maschinenbau//3. Semester//OKS//pace-race//Env//sac_pace_race.zip")
 print('Starting new game.')
 obs = env.reset() # get initial obs
