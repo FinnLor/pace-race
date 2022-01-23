@@ -246,8 +246,15 @@ class PaceRaceEnv(gym.Env):
          
         # self.MU = round(random.uniform(0.3,1.0),2) # variable friction coefficient
         
+        # # Construct new road
+        # if self.custom_center_line == None:
+        #     self.roadwidth = round(random.uniform(self.car01.WIDTH*5,self.car01.WIDTH*10), 2)
+        #     self.road = Road(ROADWIDTH=self.roadwidth, ROADLENGTH = self.ROADLENGTH, NPOINTS = 1000)
+        # else:
+        #     self.road = Road(ROADWIDTH=self.roadwidth, custom_center_line = self.custom_center_line)
+            
         # Construct new road
-        if self.custom_center_line == None:
+        if np.any(self.custom_center_line) == None:
             self.roadwidth = round(random.uniform(self.car01.WIDTH*5,self.car01.WIDTH*10), 2)
             self.road = Road(ROADWIDTH=self.roadwidth, ROADLENGTH = self.ROADLENGTH, NPOINTS = 1000)
         else:
