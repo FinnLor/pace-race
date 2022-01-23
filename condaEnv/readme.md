@@ -1,2 +1,2 @@
-# OKS_conda_env.yml
-Conda environment for reproducibility of this project.
+# OKSwin64.yml
+Conda environment (windows operating system) for reproducibility of this project.

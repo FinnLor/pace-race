@@ -31,11 +31,6 @@ class PaceRaceEnv(gym.Env):
          Episode length is greater than XXXX
     """
 
-    metadata = {"render.modes": ["human"]}
-
-
-
-
     def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, SENS_SCALE=1, CT=0.1, MU=1.0, P=100_000, ROADLENGTH = 10, verbose = 0, custom_center_line = None, custom_roadwidth=None):
         # ROADLENGTH : int, optional. Discrete factor for length of random road. Valid inputs: {2, 3, 4, 5, 6, 7, 8, 9, 10}
         # custom_center_line : np.ndarray with size [nx2], optional. Custom trajectory in R2 [x,y]-value-pairs. The default is None.

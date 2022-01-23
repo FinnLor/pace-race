@@ -6,7 +6,7 @@ from stable_baselines3.common.monitor import Monitor
 from LogTraining import CustomTrainingLogCallback, load_Log 
 
 ### CONFIGURATION
-config = {'total_timesteps': 100_000,
+config = {'total_timesteps': 100,
           'log_keys': ('obs', 'act'),                   # custom Logger
           'log_freq_epoch': 10,                         # custom Logger
           'log_freq_step': 1,                           # custom Logger
@@ -20,10 +20,14 @@ check_env(env, warn=True)
 
 
 ### MODEL SETUP
-model = SAC("MlpPolicy",
-            env,
-            verbose=1,
-            )
+# model = SAC("MlpPolicy",
+#             env,
+#             verbose=1,
+#             )
+
+### Load pre-trained model
+model = SAC.load("models/sac_pace_race_FL_01_20220122.zip")
+model.set_env(env)
 
 ### TRAINING
 print('Start training')
