@@ -213,7 +213,7 @@ class PaceRaceEnv(gym.Env):
         observation = np.concatenate((np.array([self.car01.vlon, self.car01.vlat, self.car01.omega, self.car01.delta]), np.min(sensdist, axis = 1)), axis=None) # add MU for param study
         
         # Update info-dict
-        info = {"obs": observation,"act": action}
+        info = {"obs": observation,"act": action, 'Fres': Fres}
         
         # Print to terminal
         if self.verbose == 1: 

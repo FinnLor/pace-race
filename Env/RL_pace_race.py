@@ -7,7 +7,7 @@ from LogTraining import CustomTrainingLogCallback, load_Log
 
 ### CONFIGURATION
 config = {'total_timesteps': 100,
-          'log_keys': ('obs', 'act'),                   # custom Logger
+          'log_keys': ('obs', 'act', 'Fres'),           # custom Logger
           'log_freq_epoch': 10,                         # custom Logger
           'log_freq_step': 1,                           # custom Logger
           'monitor_log_path': 'TrainLog/DefaultLog',    # integrated Logger
@@ -42,4 +42,4 @@ model.save(config['save_path_models'])
 
 
 # Load Log
-#Log = load_Log('TrainLog/myLog')
+#Log = load_Log('TrainLog/CustomLog')
