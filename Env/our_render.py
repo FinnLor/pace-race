@@ -77,7 +77,7 @@ class Render():
             self.canvas.itemconfig(self.canvas_id, text="=10m  (1 Pixel entspr.  m)")
             str_meter_pro_pixel = '{:.2f}'.format(meter_pro_pixel)
             self.canvas.insert(self.canvas_id, 23, str_meter_pro_pixel)
-        
+
         # extract and align car data
         x_car = env.car01.corners[:,0]
         y_car = np.subtract(self.Y, env.car01.corners[:,1])

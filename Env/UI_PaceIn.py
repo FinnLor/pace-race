@@ -33,15 +33,15 @@ class UIPace:
         self.orange = '#ff8844'
         
         # static text
-        self.label_RoadWidthText = tk.Label(master, text =f'STRAßENBREITE als ganze Zahl in Meter eingeben. Wertebereich in Meter [{self.road_width_min}-{self.road_width_max}]:')
+        self.label_RoadWidthText = tk.Label(self.master, text =f'STRAßENBREITE als ganze Zahl in Meter eingeben. Wertebereich in Meter [{self.road_width_min}-{self.road_width_max}]:')
         self.label_RoadWidthText.grid(row=0, column=0, sticky = 'W')
-        self.label_RoadPath = tk.Label(master, text = 'Mindestens zwei PUNKTE als Streckenverlauf erfassen (1 Pixel entspricht 1 Meter):')
+        self.label_RoadPath = tk.Label(self.master, text = 'Mindestens zwei PUNKTE als Streckenverlauf erfassen (1 Pixel entspricht 1 Meter):')
         self.label_RoadPath.grid(row=1, column=0,sticky = 'W')
-        self.label_CloseUI = tk.Label(master, text = 'Bei gültigen Daten werden diese übernommen und die GUI geschlossen:')
+        self.label_CloseUI = tk.Label(self.master, text = 'Bei gültigen Daten werden diese übernommen und die GUI geschlossen:')
         self.label_CloseUI.grid(row=2, column=0,sticky = 'W')
 
         # create entry
-        self.entry_RoadWidth = tk.Entry(master, width = 10)
+        self.entry_RoadWidth = tk.Entry(self.master, width = 10)
         self.entry_RoadWidth.grid(row=0, column=1)
         self.entry_RoadWidth.insert('end', self.road_width)
         
@@ -56,16 +56,23 @@ class UIPace:
         self.button_CloseUI.grid(row=2, column=2)      
         
         # interactive text
-        self.label_RoadWidthCheck = tk.Label(master, text = 'ungültig', width=25, background=self.orange)
+        self.label_RoadWidthCheck = tk.Label(self.master, text = 'ungültig', width=25, background=self.orange)
         self.label_RoadWidthCheck.grid(row=0, column=3, sticky = 'W')
-        self.label_RoadPathCheck = tk.Label(master, text = 'ungültig', width=25, background=self.orange)
+        self.label_RoadPathCheck = tk.Label(self.master, text = 'ungültig', width=25, background=self.orange)
         self.label_RoadPathCheck.grid(row=1, column=3, sticky = 'W')
-        self.label_RoadOkCheck = tk.Label(master, text = 'Daten nicht vollständig', width=25, background=self.orange)
+        self.label_RoadOkCheck = tk.Label(self.master, text = 'Daten nicht vollständig', width=25, background=self.orange)
         self.label_RoadOkCheck.grid(row=2, column=3, sticky = 'W')
         
         # canvas
-        self.canvas_pace = tk.Canvas(master, width=self.canvas_width, height=self.canvas_height, background='white', offset='s')
+        self.canvas_pace = tk.Canvas(self.master, width=self.canvas_width, height=self.canvas_height, background='white', offset='s')
         self.canvas_pace.grid(row=3, column=0, columnspan=4)
+
+        # items
+        self.item_info = tk.Menu(self.master)
+        self.item_about = tk.Menu(self.item_info)
+        self.item_about.add_command(label='About', command=self.ui_about)
+        self.item_info.add_cascade(label='Info', menu=self.item_about)
+        master.config(menu=self.item_info)
 
         # left mouseclick action
         self.canvas_pace.bind('<Button-1>',self.extend_RoadPath)
@@ -121,6 +128,16 @@ class UIPace:
             self.label_RoadOkCheck.configure(text = 'Daten nicht vollständig', background=self.orange)
         else:
             self.label_RoadOkCheck.configure(text = 'Daten vollständig', background=self.green)
+            
+    def ui_about(self):
+        ui_about = tk.Tk()
+        ui_about.title('ABOUT')
+        ui_about.geometry('600x340')
+        ui_about.resizable(width=False, height=False)
+        text_ok = tk.Label(ui_about, text = '\n OKS-Semesterarbeit 2022 ... ... ...')
+        text_ok.grid(row=0, column=0, columnspan=1)
+        button_ok = tk.Button(ui_about, text = 'ok', command = ui_about.destroy, width = 10)
+        button_ok.place(x=250, y=295)
 
     def closeUI(self):
         
@@ -131,28 +148,52 @@ class UIPace:
                 x = self.line_data[:,0]
                 y = np.subtract(Y, self.line_data[:,1])
                 data = np.transpose([x,y])
+                
                 # test road with a model
-                env = PaceRaceEnv(P=1000, custom_center_line = data, custom_roadwidth=self.road_width)
-                model = SAC.load("models/sac_pace_race_FS_02_210122.zip")
-                #model = SAC.load("models/sac_pace_race_bad01.zip")
+                env1 = PaceRaceEnv(P=1000, custom_center_line = data, custom_roadwidth=self.road_width)
+                env2 = PaceRaceEnv(P=1000, custom_center_line = data, custom_roadwidth=self.road_width)
+                model1 = SAC.load("models/sac_pace_race_FS_02_210122.zip")
+                model2 = SAC.load("models/sac_pace_race_em01.zip")
                 print('Starting new game.')
-                obs = env.reset() # get initial obs
-                display = Render()
-                display.update(env, done = False)
+                obs1 = env1.reset() # get initial obs
+                obs2 = env2.reset() # get initial obs
+                display1 = Render()
+                display2 = Render()
+                display1.update(env1, done = False)
+                display2.update(env2, done = False)
+                vlon1_max=0
+                vlon2_max=0
+                vsum1=0
+                vsum2=0
+                c=0
                 # for i in range(1000):
                 #     print(i)
                 #     env.step((0.3, 0.000))
                 #     display.update(env,False)
                 # display.update(env,True)
                 while True:
-                    # c+=1
+                    c+=1
                     # print(c)
                     # action = env.action_space.sample() # random
                     # obs, reward, done, info = env.step((0.001,0.1)) # manual
-                    action, _state = model.predict(obs) # agent, get next action from last obs
-                    obs, reward, done, info = env.step(action) # input action, get next obs
+                    action1, _state1 = model1.predict(obs1) # agent, get next action from last obs
+                    action2, _state2 = model2.predict(obs2) # agent, get next action from last obs
+                    obs1, reward1, done, info1 = env1.step(action1) # input action, get next obs
+                    obs2, reward2, done, info2 = env2.step(action2) # input action, get next obs
                     done = False
-                    display.update(env, done) # render that current obs
+                    if obs1[0] > vlon1_max:
+                        vlon1_max=obs1[0]
+                    if obs2[0] > vlon2_max:
+                        vlon2_max=obs2[0]
+                    vsum1 = vsum1+obs1[0]
+                    vsum2 = vsum2+obs2[0]    
+                    print(f'vmax car1={vlon1_max} vmax car2={vlon2_max}')
+                    print(f'vsum car1={vsum1} vsum car2={vsum2}')
+                    display1.update(env1, done) # render that current obs
+                    display2.update(env2, done) # render that current obs
+                    
+
+                    
 
 
 
@@ -169,22 +210,3 @@ def main():
 if __name__ == '__main__':
     main()
     
-
-
-
-
-# def ui_about():
-#     print('ABOUT')
-#     ui_about = tk.Tk()
-#     ui_about.title('ABOUT')
-#     ui_about.geometry('400x240')
-#     ui_about.resizable(width=False, height=False)
-
-# # items
-# item_info = tk.Menu(ui_pace)
-# item_about = tk.Menu(item_info)
-# item_about.add_command(label='About', command=ui_about)
-# item_info.add_cascade(label='Info', menu=item_about)
-# ui_pace.config(menu=item_info)
-
-
