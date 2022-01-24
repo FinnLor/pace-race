@@ -181,22 +181,23 @@ class PaceRaceEnv(gym.Env):
         reward -= 3 # penalize time on track
         #2
         if done:
-            reward += 2500
+            reward += 2000
         #3                       
         if self.num_iterations > 2000 and not done: # stop after a maximum o n iterations, this implies a penalty of -3n from #1
             done = True
-            reward += curr_path_length * 2000 # if stopped by exceeding time limit, reward proportionally to achieved progress
+            reward += -100 + curr_path_length * 200 # if stopped by exceeding time limit, reward proportionally to achieved progress
         #4
         if violation: # penalize violation (collision or force-check)
-            reward -= (50 + self.num_episodes/100)
+             # reward -= (50 + self.num_episodes/10)
+             reward -= 200 + self.num_episodes/10
         #5    
         reward += 0.3*self.car01.vlon
             
         # if a < 0:
         #     reward = reward - 2
         
-        # if curr_path_length - self.last_path_length > 0.2: # reward driving forward
-        #     reward = reward + 3
+        if curr_path_length - self.last_path_length > 0.2: # reward driving forward
+            reward = reward + 3
         
         # if curr_path_length < self.last_path_length: # punish driving backward
         #     reward = reward - 5
@@ -217,9 +218,9 @@ class PaceRaceEnv(gym.Env):
         
         # Print to terminal
         if self.verbose == 1: 
-            print(f"=== counter: {self.counter} === ")
+            print(f"=== counter: {self.counter} === no-episode:  {self.num_episodes:04.0F}")
         elif self.verbose == 2:
-            print(f"action_scaled: {action_scaled[0]:09.2F} ||  a: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || done: {done} || eprew: {self.episode_reward} || iter: {self.num_iterations}, || counter: {self.counter}")
+            print(f"action_scaled: {action_scaled[0]:09.2F} || a: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || epoch: {self.num_episodes:04.0F} || eprew: {self.episode_reward} || iter: {self.num_iterations}, || counter: {self.counter}")
         if self.verbose != 0:
             if self.num_iterations%10000 == 0:
                 print(f"----> {self.num_iterations}")
