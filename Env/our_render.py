@@ -6,7 +6,11 @@ Created on Wed Jan 19 19:06:30 2022
 """
 import numpy as np
 import tkinter as tk
+import matplotlib.pyplot as plt
 from shapely.geometry import LineString
+
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 
 
 class Render():
@@ -15,14 +19,17 @@ class Render():
         self.render_gui = tk.Tk() # parent window for canvas
         tk.Button(self.render_gui, text="Quit", command=self.render_gui.destroy).pack()
         self.CANVAS_WIDTH = 1600
-        self.CANVAS_HEIGHT = 1000
+        self.CANVAS_HEIGHT = 900
         self.RENDER_ANY = 1
         self.canvas = tk.Canvas(self.render_gui, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT) # canvas is the rendering area
         self.canvas.pack() # required to visualize the canvas    
         self.render_step = 0
+        self.render_step_array = []
+        self.F_ctfg = []
+        self.P = []
         self.delete_old = True
 
-    def update(self, env, done):
+    def update(self, env, done, info=None, plot_performance=False, color="blue"):
         
         if self.render_step == 0:  # NEU ERSETZT
             
@@ -77,6 +84,46 @@ class Render():
             self.canvas.itemconfig(self.canvas_id, text="=10m  (1 Pixel entspr.  m)")
             str_meter_pro_pixel = '{:.2f}'.format(meter_pro_pixel)
             self.canvas.insert(self.canvas_id, 23, str_meter_pro_pixel)
+            
+            if plot_performance == True:
+                
+                # create figure that will contain the plots
+                self.plot_fig = Figure(figsize = (12.5, 3.9),dpi = 100)
+                
+                # adding the subplots            
+                self.plot1 = self.plot_fig.add_subplot(121,xlabel='Iteration (Step)',ylabel='F_ctfg [N]', title='Centrifugal Force', box_aspect=1/1.5)
+                self.plot2 = self.plot_fig.add_subplot(122,xlabel='Iteration (Step)',ylabel='P [Nm/s]', title = 'Absolute amount of power', box_aspect=1/1.5)
+    
+                # creating the Tkinter canvas which contains the Matplotlib figures
+                self.plot_canvas = FigureCanvasTkAgg(self.plot_fig,master = self.render_gui)  
+                self.plot_canvas.get_tk_widget().pack()
+            
+        # generate the performance efficiency data arrays like power and centrifugal force
+        if plot_performance == True: 
+            if info != None:
+                P = env.car01.vlon * info['Fres']
+                self.P.append(P)
+                F_ctfg = env.car01.M * env.car01.omega * env.car01.vlon
+                self.F_ctfg.append(F_ctfg)
+      
+                # plot the performance efficiency data
+                if self.render_step % 100 == 0:
+                    self.render_step_array = np.arange(0,self.render_step+1,1)
+                    # self.plot1.plot(self.render_step_array,self.F_ctfg, color = 'blue', linewidth = 0.5)
+                    self.plot1.scatter(self.render_step_array,self.F_ctfg, marker='.', color='blue', s=0.5,linewidth = 0.5)
+                    self.plot1.plot(self.render_step_array,np.repeat(0,np.shape(self.render_step_array)[0]), color = 'black', linewidth = 0.5)
+                    self.plot2.plot(self.render_step_array,self.P, color = 'blue', linewidth = 0.5)
+                    # self.plot2.scatter(self.render_step_array,self.P, marker='.', color='blue', s=0.5,linewidth = 0.5)
+                    self.plot2.plot(self.render_step_array,np.repeat(env.max_power,np.shape(self.render_step_array)[0]), color = 'red', linewidth = 0.5)
+                    self.plot_canvas.draw()
+                    # self.plot_canvas.flush_events()
+            else:
+                pass
+                # print('These are the values of interest')
+                # print()
+                # print(f'render_step: {self.render_step}')
+                # print(f' Fctfg: {env.car01.M * env.car01.omega * env.car01.vlon}')  
+                # print(f'P: {P}')
 
         # extract and align car data
         x_car = env.car01.corners[:,0]
@@ -122,7 +169,7 @@ class Render():
             self.canvas.delete(self.car_s05)
             self.canvas.delete(self.car_s07)
             self.canvas.delete(self.car_s09)
-        self.car_polygon = self.canvas.create_polygon(car01_data, fill="blue", width=1)
+        self.car_polygon = self.canvas.create_polygon(car01_data, fill=color, width=1)
         self.car_s01 = self.canvas.create_line(s01_line_data, fill="black", width=1)
         self.car_s03 = self.canvas.create_line(s03_line_data, fill="black", width=1) 
         self.car_s05 = self.canvas.create_line(s05_line_data, fill="black", width=1) 

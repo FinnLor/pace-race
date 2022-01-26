@@ -149,15 +149,17 @@ class PaceRaceEnv(gym.Env):
         # Check if car has crossed the finish line (99,9% of roadlength)
         curr_path_length = self.car01.get_path_length(self.road)
         done = bool(curr_path_length >= 0.999)
-
+       
+        # calculate Fres (regardless of whether done is False or True)
+        F_ctfg = self.car01.M * self.car01.omega * self.car01.vlon 
+        Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
+    
         # Check for chash
         if done == False:
             # Collision check
             collision_check = self.car01.collision_check(self.road)
             
             # Check whether centrifugal force to high
-            F_ctfg = self.car01.M * self.car01.omega * self.car01.vlon 
-            Fres = math.sqrt((self.car01.M * a)**2 + F_ctfg**2) # resulting force, Pythagoras not correct because not perpendicular
             force_exceeded = Fres > self.Fmax
             
             # Bool to check whether limits were violated
@@ -176,6 +178,7 @@ class PaceRaceEnv(gym.Env):
         ######################################################################
         ####################### --- REWARD SECTION --- ####################### 
         ######################################################################
+               
         reward = 0
         #1
         reward -= 3 # penalize time on track
@@ -188,16 +191,15 @@ class PaceRaceEnv(gym.Env):
             reward += -100 + curr_path_length * 200 # if stopped by exceeding time limit, reward proportionally to achieved progress
         #4
         if violation: # penalize violation (collision or force-check)
-             # reward -= (50 + self.num_episodes/10)
-             reward -= 200 + self.num_episodes/10
+            reward -= (50 + self.num_episodes/100)
         #5    
-        reward += 0.3*self.car01.vlon
+        # reward += 0.3*self.car01.vlon
             
         # if a < 0:
         #     reward = reward - 2
         
-        if curr_path_length - self.last_path_length > 0.2: # reward driving forward
-            reward = reward + 3
+        # if curr_path_length - self.last_path_length > 0.2: # reward driving forward
+        #     reward = reward + 3
         
         # if curr_path_length < self.last_path_length: # punish driving backward
         #     reward = reward - 5
@@ -214,7 +216,7 @@ class PaceRaceEnv(gym.Env):
         observation = np.concatenate((np.array([self.car01.vlon, self.car01.vlat, self.car01.omega, self.car01.delta]), np.min(sensdist, axis = 1)), axis=None) # add MU for param study
         
         # Update info-dict
-        info = {"obs": observation,"act": action, 'Fres': Fres}
+        info = {"obs": observation,"act": action, "Fres": Fres}
         
         # Print to terminal
         if self.verbose == 1: 
