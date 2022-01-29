@@ -5,12 +5,10 @@ from env_PaceRace import PaceRaceEnv
 from our_render import Render
 from stable_baselines3 import SAC
 from shapely.geometry import LineString, Point
-from PIL import Image,ImageTk
-# import matplotlib.pyplot as plt
+import tkinter as tk 
+from tkinter import ttk 
+from PIL import ImageTk, Image
 import numpy as np
-
-# import random as rn
-import tkinter as tk
 
 
 
@@ -123,22 +121,27 @@ class UIPace:
             self.length_ok = False
         self.set_status()
             
+        
     def set_status(self):
         if self.length_ok == False or self.width_ok == False:
             self.label_RoadOkCheck.configure(text = 'Daten nicht vollstaendig', background=self.orange)
         else:
             self.label_RoadOkCheck.configure(text = 'Daten vollstaendig', background=self.green)
             
+            
     def ui_about(self):
-        ui_about = tk.Tk()
-        ui_about.title('ABOUT')
-        ui_about.geometry('600x340')
-        ui_about.resizable(width=False, height=False)
-        text_ok = tk.Label(ui_about, text = '\n OKS-Semesterarbeit 2022 ... ... ...')
-        text_ok.grid(row=0, column=0, columnspan=1)
+        ui_about = tk.Toplevel()
+        image = Image.open("splash_OKS.png") 
+        photo = ImageTk.PhotoImage(image) 
+        width = photo.width()
+        ui_about.config(width=photo.width()+4, height=photo.height()+4)
+        label_photo = ttk.Label(ui_about, image=photo)
+        label_photo.pack()
         button_ok = tk.Button(ui_about, text = 'ok', command = ui_about.destroy, width = 10)
-        button_ok.place(x=250, y=295)
-
+        button_ok.pack()
+        ui_about.mainloop()
+        
+        
     def closeUI(self):
         
             self.master.destroy() 
@@ -188,6 +191,7 @@ class UIPace:
                     print(f'vsum car1={vsum1} vsum car2={vsum2}')
                     display1.update(env1, done, info1, color='blue') # render that current obs
                     display2.update(env2, done, info2, color='red') # render that current obs
+                  
                     
 
 # create ui_pace
@@ -198,6 +202,7 @@ def main():
     ui_pace.resizable(width=False, height=False)
     app = UIPace(ui_pace)   
     ui_pace.mainloop()
+   
     
 if __name__ == '__main__':
     main()

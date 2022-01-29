@@ -16,8 +16,9 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationTool
 class Render():
     def __init__(self):
         
+        # self.render_gui = render_gui
         self.render_gui = tk.Tk() # parent window for canvas
-        tk.Button(self.render_gui, text="Quit", command=self.render_gui.destroy).pack()
+        tk.Button(self.render_gui, text="Quit", command=self.close_render).pack()
         self.CANVAS_WIDTH = 1600
         self.CANVAS_HEIGHT = 900
         self.RENDER_ANY = 1
@@ -178,8 +179,12 @@ class Render():
       
         self.render_step += 1 # NEU
         
-        if done:
-            print("End of race")
-            self.render_gui.destroy()
-        else:
+        if done == False:
             self.render_gui.update()
+        else:
+            print("End of race")
+            self.render_gui.mainloop()
+            
+            
+    def close_render(self):
+        self.render_gui.destroy()

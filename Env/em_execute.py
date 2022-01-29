@@ -9,12 +9,12 @@ env = PaceRaceEnv()
 done = False
 i=0
 # model = SAC.load("models/sac_pace_race_bad_01.zip")
-# model = SAC.load("models/sac_pace_race_FS_02_210122.zip")
-model = SAC.load("models/sac_pace_race_EM_01_230122.zip")
+model = SAC.load("models/sac_pace_race_FS_02_210122.zip")
+# model = SAC.load("models/sac_pace_race_EM_01_230122.zip")
 
 obs = env.reset() # get initial obs
 display = Render()
-while True:
+while done == False:
     i+=1
     # action = env.action_space.sample() # random
     # obs, reward, done, info = env.step((0.001,0.1)) # manual
