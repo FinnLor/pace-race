@@ -1,46 +1,123 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Dec 2021
+
+@author: Finn Lorenzen, Eliseo Milonia, Felix Schönig
+"""
+
 import math
 import random
 import numpy as np
-from matplotlib import pyplot as plt
 import gym
 from gym.utils import seeding
+
+# Custom
 from cls_Car import Car
 from cls_Road import Road
 
 
-
 class PaceRaceEnv(gym.Env):
     """
-    Description:
+    
+    Reinforcement learning environment 'Pace Race'. 
+    All physical quantities are to be interpreted in Si base units.
+    
+    Objective: Minimize lap time.
+    ---------
+    
+    Actions (continuous action space): 
+    ---------------------------------
+    
+        Action				         |  min  |  max  |
+        ----------------------------------------------                          
+        Power 				        |  -1   |    1  |
+        Change of steering angle    |  -1   |    1  |
+        
+    Observations (continuous observation space):
+    -------------------------------------------
+    
+        Observation                 |  min  |  max  |
+        ---------------------------------------------
+        Longitudinal velocity       |   0   |  100 |
+        Lateral velocity            | -100  |  100 |
+        Angular velocity            | -inf  |  inf |
+        Total steering angle        | -45°  |  45° |
+        Sensor distance measurement |   0   |   1  |
+        (5 sensors)
 
-    Observation:
-        Type: Box(2)
-        Num    Observation               Min            Max
-        0
-        1
-    Actions:
-        Type: Box(1)
-        Num    Action                    Min            Max
-        0
-    Reward:
+    Restrictions:
+    ------------
+        No collision with lane boarders.
+        No exceeding of friction
 
-    Starting State:
 
-    Episode Termination:
-         The car position is more than  XXXX
-         Episode length is greater than XXXX
+    Reward: Define your own reward function in step-function.
+    ------
+
+    Assumptions: 
+    -----------
+    	The car moves in 2-dimensional plane.
+         car has a minimum speed o 1e-5 m/s.
+         There is friction on the wheels only.
+         The wheelbase corresponds to the vehicle length.
+         One road has the same width for whole length.
+
     """
 
     def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, SENS_SCALE=1, CT=0.1, MU=1.0, P=100_000, ROADLENGTH = 10, verbose = 0, custom_center_line = None, custom_roadwidth=None):
-        # ROADLENGTH : int, optional. Discrete factor for length of random road. Valid inputs: {2, 3, 4, 5, 6, 7, 8, 9, 10}
-        # custom_center_line : np.ndarray with size [nx2], optional. Custom trajectory in R2 [x,y]-value-pairs. The default is None.
+        """
+        
+        Initializes Pace-Race reinforcement leratning object.
+        
+        Parameters
+        ----------
+        CF : int or float, optional
+            Cornering stiffness front wheel. Non-negative value. The default is 49_000.
+        CR : int or float, optional
+            Cornering stiffness rear wheel. Non-negative value. The default is 49_000.
+        M : int or float, optional
+            Mass of car. Non-negative value. The default is 1_000.
+        LF : int or float, optional
+            Distance from center to front wheel. Non-negative value. The default is 2.
+        LR : int or float, optional
+            Distance from center to rear wheel. Non-negative value. The default is 2.
+        CAR_WIDTH : int or float, optional
+            Width of car. Non-negative value. The default is 2.
+        SENS_SCALE : int or float, optional
+            Factor for scaling the length of cars sensors. Non-negative value. The default is 1.
+        CT : int or float, optional
+        	Time step for numerical integration of car dynamics. Non-negative value. The default is 0.1.
+        MU : int or float, optional
+            Coefficient of friction road-wheels. Non-negative value. The default is 1.0.
+        P : int or float, optional
+            Power of car (used for acceleration and braking). Non-negative value. The default is 100_000.
+        ROADLENGTH : int, optional
+            Discrete factor for length of random road. Valid inputs: {2, 3, 4, 5, 6, 7, 8, 9, 10}. The default is 10.
+        verbose : int, optional
+            Verbose mode. Valid inputs: {0, 1, 2}. The default is 0.
+        custom_center_line : None or np.ndarray with size [nx2], optional
+            Custom trajectory in R2 [x,y]-value-pairs. The default is None.
+        custom_roadwidth : None or int or float, optional
+            Width of the roadway. Non-negative value. The default is None.
 
+        Returns
+        -------
+        None.
 
+        """
+        
+        
+        # Check inputs
+        assert MU >= 0 , "MU has to be non-negative!"
+        valid_verbose = {0, 1, 2}
+        if verbose not in valid_verbose:
+                raise ValueError("verbose must be one of %r." % valid_verbose)
+        
         # Initialize and assign car
         self.car01 = Car(LF=LF, LR=LR, CF=CF, CR=CR, WIDTH=CAR_WIDTH, M=M, P=P,\
                              x=0, y=0, psi=0, delta=0, SENS_SCALE=SENS_SCALE, CT=CT)
                     
-        # Assign other properties
+        # Assign further properties
         self.MU = MU
         self.roadwidth = custom_roadwidth
         self.ROADLENGTH = ROADLENGTH
@@ -73,8 +150,8 @@ class PaceRaceEnv(gym.Env):
         self.max_power = P # for accelerating
         self.min_power = -P # for decelerating
 
-        self.max_delta_steering_angle = 30*CT*np.pi/180 # Zeitabhängig. entspricht 3 Grad Lenkwinkel der Räder pro Sekunde
-        self.min_delta_steering_angle = -30*CT*np.pi/180
+        self.max_delta_steering_angle = 30*CT*np.pi/180 # Zeitabhängig. entspricht 3 Grad Lenkwinkel der Räder pro Sekunde => ###########
+        self.min_delta_steering_angle = -30*CT*np.pi/180         ############### !!! DAS IST FALSCH !!! ############################
         
         self.max_total_steering_angle = 45*np.pi/180
         self.min_total_steering_angle = -45*np.pi/180   
