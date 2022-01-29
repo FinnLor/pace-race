@@ -189,7 +189,9 @@ class UIPace:
                     vsum2 = vsum2+obs2[0]    
                     print(f'vmax car1={vlon1_max} vmax car2={vlon2_max}')
                     print(f'vsum car1={vsum1} vsum car2={vsum2}')
-                    display1.update(env1, done, info1, color='blue') # render that current obs
+                    
+     
+                    display1.update(env1, done, info1, plot_performance=True, color='blue') # render that current obs
                     display2.update(env2, done, info2, color='red') # render that current obs
                   
                     

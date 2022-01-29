@@ -20,13 +20,13 @@ class Render():
         self.render_gui = tk.Tk() # parent window for canvas
         tk.Button(self.render_gui, text="Quit", command=self.close_render).pack()
         self.CANVAS_WIDTH = 1600
-        self.CANVAS_HEIGHT = 900
+        self.CANVAS_HEIGHT = 800
         self.RENDER_ANY = 1
-        self.canvas = tk.Canvas(self.render_gui, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT) # canvas is the rendering area
+        self.canvas = tk.Canvas(self.render_gui, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT, bg='white') # canvas is the rendering area
         self.canvas.pack() # required to visualize the canvas    
         self.render_step = 0
         self.render_step_array = []
-        self.F_ctfg = []
+        self.F_res = []
         self.P = []
         self.delete_old = True
 
@@ -92,8 +92,8 @@ class Render():
                 self.plot_fig = Figure(figsize = (12.5, 3.9),dpi = 100)
                 
                 # adding the subplots            
-                self.plot1 = self.plot_fig.add_subplot(121,xlabel='Iteration (Step)',ylabel='F_ctfg [N]', title='Centrifugal Force', box_aspect=1/1.5)
-                self.plot2 = self.plot_fig.add_subplot(122,xlabel='Iteration (Step)',ylabel='P [Nm/s]', title = 'Absolute amount of power', box_aspect=1/1.5)
+                self.plot1 = self.plot_fig.add_subplot(121,xlabel='Iteration (Step)',ylabel='F_res [N]', title='Centrifugal Force', box_aspect=1/1.5)
+                self.plot2 = self.plot_fig.add_subplot(122,xlabel='Iteration (Step)',ylabel='P [Nm/s/norm]', title = 'Absolute amount of power', box_aspect=1/1.5)
     
                 # creating the Tkinter canvas which contains the Matplotlib figures
                 self.plot_canvas = FigureCanvasTkAgg(self.plot_fig,master = self.render_gui)  
@@ -102,20 +102,27 @@ class Render():
         # generate the performance efficiency data arrays like power and centrifugal force
         if plot_performance == True: 
             if info != None:
-                P = env.car01.vlon * info['Fres']
-                self.P.append(P)
-                F_ctfg = env.car01.M * env.car01.omega * env.car01.vlon
-                self.F_ctfg.append(F_ctfg)
+                
+                # get power
+                P = info['act'][0]
+                self.P.append(P)  
+                
+                # get resolution forces
+                F_res = info['Fres']
+                self.F_res.append(F_res)
       
                 # plot the performance efficiency data
                 if self.render_step % 100 == 0:
                     self.render_step_array = np.arange(0,self.render_step+1,1)
-                    # self.plot1.plot(self.render_step_array,self.F_ctfg, color = 'blue', linewidth = 0.5)
-                    self.plot1.scatter(self.render_step_array,self.F_ctfg, marker='.', color='blue', s=0.5,linewidth = 0.5)
-                    self.plot1.plot(self.render_step_array,np.repeat(0,np.shape(self.render_step_array)[0]), color = 'black', linewidth = 0.5)
-                    self.plot2.plot(self.render_step_array,self.P, color = 'blue', linewidth = 0.5)
-                    # self.plot2.scatter(self.render_step_array,self.P, marker='.', color='blue', s=0.5,linewidth = 0.5)
-                    self.plot2.plot(self.render_step_array,np.repeat(env.max_power,np.shape(self.render_step_array)[0]), color = 'red', linewidth = 0.5)
+                    # self.plot1.plot(self.render_step_array,self.F_res, color = 'blue', linewidth = 0.5)
+                    self.plot1.scatter(self.render_step_array,self.F_res, marker='.', color='blue', s=0.5,linewidth = 0.5)
+                     # scat.set_offsets([self.render_step_array,self.F_res])
+                    self.plot1.plot(self.render_step_array,np.repeat(0,np.shape(self.render_step_array)[0]), color = 'black', linewidth = 0.5) 
+                    self.plot1.plot(self.render_step_array,np.repeat(env.Fmax,np.shape(self.render_step_array)[0]), color = 'red', linewidth = 0.5)
+                    # self.plot2.plot(self.render_step_array,self.P, color = 'blue', linewidth = 0.5)
+                    self.plot2.scatter(self.render_step_array,self.P, marker='.', color='blue', s=0.5,linewidth = 0.5)
+                    self.plot2.plot(self.render_step_array,np.repeat(1,np.shape(self.render_step_array)[0]), color = 'red', linewidth = 0.5)
+                    self.plot2.plot(self.render_step_array,np.repeat(-1,np.shape(self.render_step_array)[0]), color = 'red', linewidth = 0.5)
                     self.plot_canvas.draw()
                     # self.plot_canvas.flush_events()
             else:
