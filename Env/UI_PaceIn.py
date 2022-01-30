@@ -154,18 +154,18 @@ class UIPace:
 
                 # test road with a model
                 env1 = PaceRaceEnv(P=1000, custom_center_line = data, custom_roadwidth=self.road_width)
-                env2 = PaceRaceEnv(P=1000, custom_center_line = data, custom_roadwidth=self.road_width)
+                # env2 = PaceRaceEnv(P=1000, custom_center_line = data, custom_roadwidth=self.road_width)
                 # model = SAC.load("models/sac_pace_race_bad_01.zip")
-                model1 = SAC.load("models/sac_pace_race_EM_01_230122.zip")
-                model2 = SAC.load("models/sac_pace_race_FS_02_210122.zip")
+                model1 = SAC.load("models/sac_pace_race_FS_05_210122.zip")
+                # model2 = SAC.load("models/sac_pace_race_FS_02_210122.zip")
                 obs1 = env1.reset() # get initial obs
-                obs2 = env2.reset() # get initial obs
+                # obs2 = env2.reset() # get initial obs
                 display1 = Render()
-                display2 = Render()
+                # display2 = Render()
                 vlon1_max=0
-                vlon2_max=0
+                # vlon2_max=0
                 vsum1=0
-                vsum2=0
+                # vsum2=0
                 c=0
                 # for i in range(1000):
                 #     print(i)
@@ -177,22 +177,22 @@ class UIPace:
                     # action = env.action_space.sample() # random
                     # obs, reward, done, info = env.step((0.001,0.1)) # manual
                     action1, _state1 = model1.predict(obs1) # agent, get next action from last obs
-                    action2, _state2 = model2.predict(obs2) # agent, get next action from last obs
+                    # action2, _state2 = model2.predict(obs2) # agent, get next action from last obs
                     obs1, reward1, done, info1 = env1.step(action1) # input action, get next obs
-                    obs2, reward2, done, info2 = env2.step(action2) # input action, get next obs
-                    done = False
+                    # obs2, reward2, done, info2 = env2.step(action2) # input action, get next obs
+                    # done = False
                     if obs1[0] > vlon1_max:
                         vlon1_max=obs1[0]
-                    if obs2[0] > vlon2_max:
-                        vlon2_max=obs2[0]
+                    # if obs2[0] > vlon2_max:
+                        # vlon2_max=obs2[0]
                     vsum1 = vsum1+obs1[0]
-                    vsum2 = vsum2+obs2[0]
-                    print(f'vmax car1={vlon1_max} vmax car2={vlon2_max}')
-                    print(f'vsum car1={vsum1} vsum car2={vsum2}')
+                    # vsum2 = vsum2+obs2[0]
+                    # print(f'vmax car1={vlon1_max} vmax car2={vlon2_max}')
+                    # print(f'vsum car1={vsum1} vsum car2={vsum2}')
 
 
                     display1.update(env1, done, info1, plot_performance=True, color='blue') # render that current obs
-                    display2.update(env2, done, info2, color='red') # render that current obs
+                    # display2.update(env2, done, info2, color='red') # render that current obs
 
 
 
