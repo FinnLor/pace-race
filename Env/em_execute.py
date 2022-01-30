@@ -8,9 +8,7 @@ import numpy as np
 env = PaceRaceEnv()
 done = False
 i=0
-# model = SAC.load("models/sac_pace_race_bad_01.zip")
-model = SAC.load("models/sac_pace_race_FS_02_210122.zip")
-# model = SAC.load("models/sac_pace_race_EM_01_230122.zip")
+model = SAC.load("models/sac_pace_race_FL_01_20220122.zip")
 
 obs = env.reset() # get initial obs
 display = Render()
