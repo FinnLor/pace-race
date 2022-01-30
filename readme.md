@@ -1,6 +1,6 @@
 # PaceRace
 
-Welcome to PaceRace, as reinforcement learning based work-in-progress student project to optimize the laptime of 2D vehicle on randomly generated tracks.
+Welcome to PaceRace, a student project to optimize the laptime of a 2D vehicle on randomly generated tracks based on reinforcement learning. Work is in progess.
 
 ## Description
 
@@ -42,9 +42,9 @@ All you need is in ```Env/```
 
 Contributors names and contact info
 
-Finn Lorenzen
-Eliseo Milonia
-Felix Schönig
+Finn Lorenzen  
+Eliseo Milonia  
+Felix Schönig  
 
 
 ## Version History
