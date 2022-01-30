@@ -2,7 +2,7 @@
 from env_PaceRace import PaceRaceEnv
 from our_render import Render
 from stable_baselines3 import SAC
-import tkinter as tk 
+import tkinter as tk
 import numpy as np
 
 env = PaceRaceEnv()
