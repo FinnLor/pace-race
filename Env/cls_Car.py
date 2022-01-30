@@ -27,12 +27,72 @@ class Car:
     
     Attributes
     ----------
-    work in progress
-    
+    CF : int or float
+    	Cornering stiffness front wheel.
+    CR : int or float
+    	Cornering stiffness rear wheel.
+        LF : int or float
+	Distance from center to front wheel.
+    LR : int or float
+        Distance from center to rear wheel.
+    M : int or float
+    	Mass of car.
+    SENS_SCALE : int or float
+    	Factor for scaling the length of cars sensors.
+    WIDTH : int of float
+    	Width of car.
+    center : np.ndarray with size [2, ]
+    	Coordinate of cars center of gravity.
+    corners : np.ndarray with size [5, 2]
+    	Coordinates of cars corners.
+    cycletime : int or float
+    	Time step for numerical integration of car dynamics.
+    delta : int of float
+    	Steering angle of car.
+    omega : int or float
+    	Angular velocity of car.
+    psi : int or float
+    	Yaw angle of car.
+    s_ref : np.ndarray with size [2, ]
+    	Coordinates of sensor position.
+    sensors: np.ndarray with size [5, 2]
+    	Coordinates of end of visibility of all sensors.
+    t0 : int or float
+    	Start time for numerical integration.
+    vlat : int or float
+    	Lateral velocity of car.
+    vlon: int of float
+    	Longitudinal velocity of car.
+
     Methods
     -------
-    work in progress
-        
+    _car_dynamics(self, t, states, inputs):
+        Function containing system of differential equations.
+    collision_check(self, road): 
+        Checks whether the vehicle is still on the road. 
+        If the vehicle intersects one of the boundary lines or is outside the road, 
+        False is returned, otherwise True.
+    get_path_length(self, road, normalized = True): 
+        Find the reached distance measured along the centerline.
+    get_sensordata(self, road, normalized = True):
+        Find out whether there is one of the boundaries in the sensors' field of view. 
+        If True, return the distance, if False return the max. measuring range.
+    set_car_pos(self, x, y, psi, delta):
+        Sets the car to a specified position in the R2.
+    set_next_car_position(self, inputs):
+        Calling this method passes the inputs to the internally invoked 
+        system of differential equations. They are numerically integrated for 
+        the specified cycletime. The method then uses the results to set the 
+        new state variables of the Car object.
+    set_resume_pos(self, road):  
+        Sets the car on the center line at the shortest distance from the current position.  
+        The car is aligned tangentially to the lane centerline. 
+        The steering angle is reset to 0 rad.
+    set_start_pos(self, road):    
+        Sets the car to the starting point of a road (on centerline). 
+        The car is aligned tangentially to the lane centerline. 
+        The steering angle is set to 0 rad.
+     
     """
     
     
@@ -48,7 +108,7 @@ class Car:
         The position of the car is defined via coordinates (x and y), 
         as well as the specification of yaw angle and steering angle in R2. 
         
-            Geometrie overview
+            Geometry overview
             ------------------
         
             W    c1-----------------c5
@@ -88,7 +148,7 @@ class Car:
         M : int or float, optional
             Mass of car. Non-negative value. The default is 1_000.
         P : int or float, optional
-            Power of car. Non-negative value. The default is 100_000.
+            Power of car Power of car (used for acceleration and braking). Non-negative value. The default is 100_000.
         x : int or float, optional
             x-Position of the car center point. The default is 0.
         y : int or float, optional
@@ -96,9 +156,9 @@ class Car:
         psi : int or float, optional
             Yaw angle. The default is 0.
         delta : int or float, optional
-            DESCRIPTION. The default is 0.
+            Steering angle. The default is 0.
         SENS_SCALE : int or float, optional
-            Steering angle. Non-negative value. The default is 1.
+            Factor for scaling the length of sensors. Non-negative value. The default is 1.
         CT : int or float, optional
             Timestep for numerical integration. Non-negative value. The default is 0.1.
 
@@ -440,6 +500,10 @@ class Car:
     def _car_dynamics(self, t, states, inputs):
         """
         
+        Function containing system of differential equations.
+        
+        ...
+        
         Parameters
         ----------
         t : scalar
@@ -610,11 +674,4 @@ if __name__ == "__main__":
     print(car1.get_sensordata(road)) # relative distance
     print(car1.get_sensordata(road, normalized = False)) # absoluted distance
     
-    
-
-
-
-
-
-        
-      
+ 
