@@ -13,7 +13,7 @@ env = PaceRaceEnv(verbose =1)
 c = 0
 done = False
 # model = SAC.load("models/sac_pace_race_FL_01_20220122.zip")
-model = SAC.load("models/sac_pace_race_EM_01_230122.zip")
+model = SAC.load("models/sac_pace_race_FS_05_210122")
 print('Starting new game.')
 obs = env.reset() # get initial obs
 display = Render()
