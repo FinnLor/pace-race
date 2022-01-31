@@ -5,11 +5,12 @@ Created on Dec 2021
 @author: Finn Lorenzen, Eliseo Milonia, Felix Schönig
 """
 
+
+from scipy import integrate
 from shapely.geometry import LineString, Point, Polygon
 from shapely.errors import ShapelyDeprecationWarning
-import numpy as np
 import math
-from scipy import integrate
+import numpy as np
 import warnings
 
 

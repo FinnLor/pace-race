@@ -5,9 +5,10 @@ Created on Dec 2021
 @author: Finn Lorenzen, Eliseo Milonia, Felix Schönig
 """
 
+
 from shapely.geometry import LineString, Point
-import numpy as np
 from scipy.interpolate import interp1d 
+import numpy as np
 
 
 class Road:

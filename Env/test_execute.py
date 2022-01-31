@@ -2,18 +2,20 @@
 """
 Created on Wed Jan 19 18:43:40 2022
 
-@author: felix
+@author: Finn Lorenzen, Eliseo Milonia, Felix Schönig
 """
-from stable_baselines3 import SAC
-from env_PaceRace import PaceRaceEnv
-from our_render import Render, load_model
 
-filename = load_model()
+
+from env_PaceRace import PaceRaceEnv
+from our_render import Render
+from stable_baselines3 import SAC
+
 
 env = PaceRaceEnv(verbose =1)
 c = 0
 done = False
-model = SAC.load(filename)
+model = SAC.load("models/sac_pace_race_FS_05_210122.zip")
+
 print('Starting new game.')
 obs = env.reset() # get initial obs
 display = Render()

@@ -5,12 +5,14 @@ Created on Jan 2022
 @author: Finn Lorenzen, Eliseo Milonia, Felix Schönig
 """
 
+
 from stable_baselines3.common.callbacks import BaseCallback
-import os
+from typing import Tuple
 import csv
 import json
+import os
 import pandas
-from typing import Tuple
+
 
 class CustomTrainingLogCallback(BaseCallback):
     """

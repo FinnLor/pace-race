@@ -1,10 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Jan 2022
+
+@author: Finn Lorenzen, Eliseo Milonia, Felix Schönig
+"""
 
 
 from env_PaceRace import PaceRaceEnv
-from stable_baselines3 import SAC, A2C
+from LogTraining import CustomTrainingLogCallback, load_Log 
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.monitor import Monitor
-from LogTraining import CustomTrainingLogCallback, load_Log 
+from stable_baselines3 import SAC, A2C
 
 
 ### CONFIGURATION

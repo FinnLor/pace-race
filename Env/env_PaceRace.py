@@ -5,11 +5,12 @@ Created on Dec 2021
 @author: Finn Lorenzen, Eliseo Milonia, Felix Schönig
 """
 
-import math
-import random
-import numpy as np
-import gym
+
 from gym.utils import seeding
+import gym
+import math
+import numpy as np
+import random
 
 # Custom
 from cls_Car import Car

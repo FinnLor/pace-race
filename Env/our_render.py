@@ -2,30 +2,39 @@
 """
 Created on Wed Jan 19 19:06:30 2022
 
-@author: felix
+@author: Finn Lorenzen, Eliseo Milonia, Felix Schönig
 """
+
+
 import numpy as np
 import tkinter as tk
-import matplotlib.pyplot as plt
 from shapely.geometry import LineString
-from tkinter.filedialog import askopenfilename
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
-
-
-def load_model():
-    root = tk.Tk()
-    filename = askopenfilename()
-    root.destroy()
-    return filename
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 
 
 class Render():
+    """
+    Class to render the car and the street. 
+    The street will be maximized into the Canvas
+    
+    ...
+    
+    Attributes
+    ----------
+    .. : ...
+
+    Methods
+    -------
+    ...
+    
+        
+    """
     def __init__(self):
 
         # self.render_gui = render_gui
         self.render_gui = tk.Tk() # parent window for canvas
-        tk.Button(self.render_gui, text="Quit", command=self.close_render).pack()
+        tk.Button(self.render_gui, text="Quit", command=self.close_render, width=10).pack()
         self.CANVAS_WIDTH = 1600
         self.CANVAS_HEIGHT = 700
         self.RENDER_ANY = 1
@@ -134,12 +143,7 @@ class Render():
                     self.plot_canvas.draw()
                     # self.plot_canvas.flush_events()
             else:
-                pass
-                # print('These are the values of interest')
-                # print()
-                # print(f'render_step: {self.render_step}')
-                # print(f' Fctfg: {env.car01.M * env.car01.omega * env.car01.vlon}')
-                # print(f'P: {P}')
+                print('No Info loaded')
 
         # extract and align car data
         x_car = env.car01.corners[:,0]
@@ -174,7 +178,6 @@ class Render():
         x_s09 = self.factor * np.add(x_s09, -self.min_x)
         y_s09 = self.factor * np.add(y_s09, -self.min_y)
         s09_line_data = list((np.ravel(([x_s09,y_s09]),'F'))) # list is neccessary for a correct separation with comma
-
 
         # generate car and sensor data
         # if iteration !=0 and delete_old == True:
