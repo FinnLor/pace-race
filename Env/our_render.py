@@ -8,9 +8,16 @@ import numpy as np
 import tkinter as tk
 import matplotlib.pyplot as plt
 from shapely.geometry import LineString
-
+from tkinter.filedialog import askopenfilename
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+
+
+def load_model():
+    root = tk.Tk()
+    filename = askopenfilename()
+    root.destroy()
+    return filename
 
 
 class Render():
@@ -29,6 +36,7 @@ class Render():
         self.F_res = []
         self.P = []
         self.delete_old = True
+        
 
     def update(self, env, done, info=None, plot_performance=False, color="blue"):
 

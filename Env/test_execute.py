@@ -6,18 +6,17 @@ Created on Wed Jan 19 18:43:40 2022
 """
 from stable_baselines3 import SAC
 from env_PaceRace import PaceRaceEnv
-from our_render import Render
+from our_render import Render, load_model
+
+filename = load_model()
 
 env = PaceRaceEnv(verbose =1)
-# model = load("SAC_model")
 c = 0
 done = False
-# model = SAC.load("models/sac_pace_race_FL_01_20220122.zip")
-model = SAC.load("models/sac_pace_race_FS_05_210122")
+model = SAC.load(filename)
 print('Starting new game.')
 obs = env.reset() # get initial obs
 display = Render()
-# display.update(env, done, plot_performance=True)
 while True:
     # c+=1
     # print(c)
