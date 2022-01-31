@@ -17,7 +17,7 @@ model = SAC.load("models/sac_pace_race_FS_05_210122")
 print('Starting new game.')
 obs = env.reset() # get initial obs
 display = Render()
-display.update(env, done)
+# display.update(env, done, plot_performance=True)
 while True:
     # c+=1
     # print(c)
@@ -25,4 +25,4 @@ while True:
     # obs, reward, done, info = env.step((0.001,0.1)) # manual
     action, _state = model.predict(obs) # agent, get next action from last obs
     obs, reward, done, info = env.step(action) # input action, get next obs
-    display.update(env, done, info) # render that current obs
+    display.update(env, done, info, plot_performance=True) # render that current obs

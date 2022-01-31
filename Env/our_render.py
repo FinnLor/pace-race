@@ -20,7 +20,7 @@ class Render():
         self.render_gui = tk.Tk() # parent window for canvas
         tk.Button(self.render_gui, text="Quit", command=self.close_render).pack()
         self.CANVAS_WIDTH = 1600
-        self.CANVAS_HEIGHT = 800
+        self.CANVAS_HEIGHT = 700
         self.RENDER_ANY = 1
         self.canvas = tk.Canvas(self.render_gui, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT, bg='white') # canvas is the rendering area
         self.canvas.pack() # required to visualize the canvas
