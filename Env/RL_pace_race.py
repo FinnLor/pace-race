@@ -14,7 +14,7 @@ from stable_baselines3 import SAC, A2C
 
 
 ### CONFIGURATION
-config = {'total_timesteps': 60000,
+config = {'total_timesteps': 500,
           'log_keys': ('obs', 'act', 'Fres'),           # custom Logger
           'log_freq_epoch': 10,                         # custom Logger
           'log_freq_step': 10,                          # custom Logger
@@ -31,6 +31,7 @@ check_env(env, warn=True)
 model = SAC("MlpPolicy",
             env,
             verbose=1,
+            seed=0
             )
 
 # Load pre-trained model

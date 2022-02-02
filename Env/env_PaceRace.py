@@ -245,12 +245,12 @@ class PaceRaceEnv(gym.Env):
             
             # Set car to resume-position, when violation
             if violation:
-                done = True
-                # resume_successful = self.car01.set_resume_pos(self.road)
-                # if self.verbose != 0:
-                #     print(f"--got resumed! at {self.num_iterations}")
-                # if resume_successful == False:
-                #     raise NotImplementedError(f"Calculation of psi failed: {self.num_iterations}")
+                # done = True
+                resume_successful = self.car01.set_resume_pos(self.road)
+                if self.verbose != 0:
+                    print(f"--got resumed! at {self.num_iterations}")
+                if resume_successful == False:
+                    raise NotImplementedError(f"Calculation of psi failed: {self.num_iterations}")
         else:
             violation = False
             
