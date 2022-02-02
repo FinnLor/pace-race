@@ -73,7 +73,7 @@ class CustomTrainingLogCallback(BaseCallback):
         :return: (bool) If the callback returns False, training is aborted early.
         """
 
-        # Now the length of the info_dict entries is know, so we update the headers accordingly
+        # Now the length of the info_dict entries is known, so we update the headers accordingly
         if self.before_first_step:
             updated_fieldnames = ["epoch","iter"]
             for key in self.info_keywords:
