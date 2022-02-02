@@ -50,12 +50,15 @@ class CustomTrainingLogCallback(BaseCallback):
         # Open file
         self.file_handler = open(filename, "wt", newline="\n")
         self.file_handler.write("#%s\n" % json.dumps(header))
-        self.logger = csv.DictWriter(self.file_handler, fieldnames=("epoch","iter") + self.info_keywords)
-        self.logger.writeheader()
+        # self.logger = csv.DictWriter(self.file_handler, fieldnames=("epoch","iter") + self.info_keywords)
+        # self.logger.writeheader()
         self.file_handler.flush()
         
         # Initialize counter
         self.iter = 0
+        
+        # 
+        self.before_first_step = True
 
     def _on_rollout_start(self) -> None:
         pass
@@ -69,6 +72,23 @@ class CustomTrainingLogCallback(BaseCallback):
 
         :return: (bool) If the callback returns False, training is aborted early.
         """
+
+        # Now the length of the info_dict entries is know, so we update the headers accordingly
+        if self.before_first_step:
+            updated_fieldnames = ["epoch","iter"]
+            for key in self.info_keywords:
+                try: # works only for a sequence (string, tuple, list ...) or collection (dict, set...)
+                    for i in range(len(self.model.env.buf_infos[0][key])):
+                        subkey = key + str(i)   
+                        updated_fieldnames.append(subkey)
+                except TypeError:
+                    updated_fieldnames.append(key)
+            
+            self.logger = csv.DictWriter(self.file_handler, fieldnames=updated_fieldnames)
+            self.logger.writeheader()
+            
+            self.before_first_step = False
+            
 
         # Write to file 
         if (self.model._episode_num % self.log_freq_epoch) == 0:  
