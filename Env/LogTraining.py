@@ -76,8 +76,13 @@ class CustomTrainingLogCallback(BaseCallback):
                 
                 ret = {'epoch': self.model._episode_num,'iter': self.iter}
                 for key in self.info_keywords:
-                    ret[key] = self.model.env.buf_infos[0][key]
-                    
+                    try: # works only for a sequence (string, tuple, list ...) or collection (dict, set...)
+                        for i in range(len(self.model.env.buf_infos[0][key])):
+                            subkey = key + str(i)
+                            ret[subkey] = self.model.env.buf_infos[0][key][i]
+                    except TypeError:
+                        ret[key] = self.model.env.buf_infos[0][key]
+                            
                 self.logger.writerow(ret)
                 self.file_handler.flush()
 

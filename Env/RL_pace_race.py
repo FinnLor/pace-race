@@ -31,6 +31,7 @@ check_env(env, warn=True)
 model = SAC("MlpPolicy",
             env,
             verbose=1,
+            seed=0
             )
 
 # Load pre-trained model
