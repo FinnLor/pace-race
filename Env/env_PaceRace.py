@@ -157,7 +157,7 @@ class PaceRaceEnv(gym.Env):
 
         self.max_delta_steering_angle = 15*CT*np.pi/180 # Zeitabhängig. entspricht 6 Grad Lenkwinkel der Räder pro Sekunde
         self.min_delta_steering_angle = -15*CT*np.pi/180
-        
+
         self.max_total_steering_angle = 45*np.pi/180
         self.min_total_steering_angle = -45*np.pi/180   
 
@@ -270,19 +270,20 @@ class PaceRaceEnv(gym.Env):
         if done:
             reward += 2000
         #3                       
+
         if self.num_iterations > 2000 and not done: # stop after a maximum o n iterations
             done = True
             reward += -100 + curr_path_length * 200 # if stopped by exceeding time limit, reward proportionally to achieved progress
             print(f'reached path_length: {curr_path_length}')
         #4
         if violation: # penalize violation (collision or force-check)
-            reward -= (50 + self.num_episodes/100)
+            # reward -= (300 + self.num_episodes)
+            reward -= 400
         #5    
         reward += 0.3*self.car01.vlon
         
         # slight negative reward for omega
         # reward -= 1*np.abs(self.car01.omega)
-        
         
         # if a < 0:
         #     reward -= 2
@@ -291,10 +292,10 @@ class PaceRaceEnv(gym.Env):
         #     reward += 3
         # if curr_path_length < self.last_path_length: # punish driving backward
         #     reward -= 5
-        
+
         # Get sensordata of a car
         sensdist = self.car01.get_sensordata(self.road, normalized=True)
-
+        
         # update reward
         self.episode_reward += reward
         

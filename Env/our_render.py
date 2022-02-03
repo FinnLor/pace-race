@@ -74,6 +74,7 @@ class Render():
         None.
 
         """
+        
         # self.render_gui = render_gui
         self.render_gui = tk.Tk() # parent window for canvas
         self.render_gui.title('our_render')
@@ -208,7 +209,7 @@ class Render():
                 self.plot2.set_xlim(0,self.xmax)
                 self.plot2.set_ylim(-1.10,1.10)
                 self.scat2 = self.plot2.scatter(0,0, marker='.', color='blue', s=0.5,linewidth = 0.7)
-                
+
                 # creating the Tkinter canvas which contains the Matplotlib figures
                 self.plot_canvas = FigureCanvasTkAgg(self.plot_fig,master = self.render_gui)
                 self.plot_canvas.get_tk_widget().pack()
@@ -240,7 +241,7 @@ class Render():
                 self.P_data.append([np.shape(self.render_step_array)[0],P])
 
                 # plot the performance efficiency data
-                if self.render_step % 2 == 0:
+                if self.render_step % 1 == 0:
                     self.scat1.set_offsets(self.F_data)
                     self.plot1.set_xlim(0,self.render_step)
                     # self.scat1.update_scalarmappable()
@@ -250,7 +251,6 @@ class Render():
                     # self.scat2.update_scalarmappable()
                     self.scat2.axes.figure.canvas.draw_idle()
                     # self.plot_fig.canvas.flush_events() 
-
             else:
                 print('No Info loaded')
 

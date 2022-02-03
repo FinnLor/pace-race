@@ -132,7 +132,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     
     # Create object
-    road = Road(ROADLENGTH = 3)
+    road = Road(ROADLENGTH = 6)
         
     # Get data from object
     x_center_line = np.array(road.center_line.coords)[:,0] 

@@ -247,7 +247,7 @@ class Car:
         # Set sensor end-points
         s01 = c4 + np.dot(rot_sensor, (0, self.WIDTH*4) )
         s03 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*50, self.WIDTH*4) )
-        s05 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*100, 0) ) # 100
+        s05 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*100, 0) )
         s07 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*50, -self.WIDTH*4) )
         s09 = c4 + np.dot(rot_sensor, (0, -self.WIDTH*4) )
         

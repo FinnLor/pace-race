@@ -114,6 +114,7 @@ class UIPace():
         self.master = master
         self.CANVAS_WIDTH = 1296
         self.CANVAS_HEIGHT = 584
+
         self.ROAD_WIDTH_MIN = 8
         self.ROAD_WIDTH_MAX = 40
         self.road_width = int(np.round(0.5*(self.ROAD_WIDTH_MIN+self.ROAD_WIDTH_MAX)))
