@@ -6,34 +6,77 @@ Created on Wed Jan 19 19:06:30 2022
 """
 
 
-import numpy as np
-import tkinter as tk
-from shapely.geometry import LineString
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
+from shapely.geometry import LineString
+import numpy as np
+import tkinter as tk
 
 
 class Render():
     """
-    Class to render the car and the street. 
-    The street will be maximized into the Canvas
+    Class to render the car with sensors and the street. 
+    The size of the street is fitted into the Canvas.
     
     ...
     
     Attributes
     ----------
-    .. : ...
+    render_gui : tkinter.Tk
+        parent window for the canvas.
+    CANVAS_WIDTH: int
+        Width of the canvas.
+    CANVAS_HEIGHT: int
+        Height of the canvas.
+    RENDER_ANY: int
+        Steps between each render-process.
+    canvas : tkinter.Canvas
+        The canvas window.
+    render_step : int
+        Counter for the number of update-calls.
+    render_step_array : np.ndarray with size [ ,2]
+        Array of steps.
+    num_Resumes : int
+        Counter for the number of resumes.
+    F_res : int or float
+        Resulting tire forces.
+    P : int or float
+        Current power amount of car.
+    done : bool
+        Detects whether the rendering steps are finished.
+    stop : bool
+        Detects whether user would like to stop the rendering.
 
     Methods
     -------
-    ...
-    
-        
+    def update(self, env, done, info=None, plot_performance=False, delete_old = True, color="blue"):
+        Initiates update process of render window, 
+        regarding all corresponding properties.
+    def close_render(self):   
+        Initiates the closing process of render window.
     """
+    
+    
     def __init__(self):
+        """
+        
+        Initializes object.
+        Creates a canvas in which the road, the car and other 
+        (partially optional) information will be rendered.
+        ...
 
+        Parameters
+        ----------
+        None.
+
+        Returns
+        -------
+        None.
+
+        """
         # self.render_gui = render_gui
         self.render_gui = tk.Tk() # parent window for canvas
+        self.render_gui.title('our_render')
         tk.Button(self.render_gui, text="Quit", command=self.close_render, width=10).pack()
         self.CANVAS_WIDTH = 1600
         self.CANVAS_HEIGHT = 700
@@ -41,16 +84,47 @@ class Render():
         self.canvas = tk.Canvas(self.render_gui, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT, bg='white') # canvas is the rendering area
         self.canvas.pack() # required to visualize the canvas
         self.render_step = 0
-        self.render_step_array = []
+        self.render_step_array = np.array([])
+        self.num_Resumes = 0
         self.F_res = []
         self.P = []
-        self.delete_old = True
+        self.done = False
+        self.stop = False
+
+
+    def update(self, env, done, info=None, plot_performance=False, delete_old = True, color="blue"):
+        """
         
+        Returns the relative (default) or absolute distance from the first point of the road to a specified point, 
+        measured along the lane centerline.
 
-    def update(self, env, done, info=None, plot_performance=False, color="blue"):
+        Parameters
+        ----------
+        env : env_PaceRace.PaceRaceEnv
+            The whole Reinforcement learning environment.
+        done : bool, optional
+            Detects whether the rendering steps are finished.
+        plot_performance : bool, optional
+            Detects whether performance info should be plotted during
+            the rendering process.
+        delete_old : bool, optional
+            Detects whether old car position should be deleted
+            before the next rendering.
+        color: str, optional
+            Color of the car.
+        
+        Returns
+        -------
+        None.
+        
+        """
 
+        self.done = done
         if self.render_step == 0:  # NEU ERSETZT
-
+        
+            # set whether old car should be deleted
+            self.delete_old = delete_old
+            
             # get canvas height for up-down-flipping
             self.Y = self.canvas.winfo_reqheight()-4 # height of canvas, minus 4 is necessary
             self.X = self.canvas.winfo_reqwidth()-4 # width of canvas, minus 4 is necessary
@@ -91,17 +165,23 @@ class Render():
             self.canvas.create_line(right_line_data, fill="brown", width=2)
 
             # generate 10m-measure-line
-            x_m = [self.X/2-(5*self.factor), self.X/2+(5*self.factor)]
+            x_m = [-100 + self.X/2-(5*self.factor), -100 + self.X/2+(5*self.factor)]
             y_m = [self.Y-10, self.Y-10]
             measure_line_data = list((np.ravel(([x_m,y_m]),'F')))
-            self.canvas.create_line(measure_line_data, width=5)
+            self.canvas.create_line(measure_line_data, width=6)
 
             # generate measurement text
-            meter_pro_pixel = 1/self.factor
-            self.canvas_id = self.canvas.create_text(10 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
-            self.canvas.itemconfig(self.canvas_id, text="=10m  (1 Pixel entspr.  m)")
-            str_meter_pro_pixel = '{:.2f}'.format(meter_pro_pixel)
-            self.canvas.insert(self.canvas_id, 23, str_meter_pro_pixel)
+            self.canvas_text_pixel= self.canvas.create_text(-92 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
+            self.canvas.itemconfig(self.canvas_text_pixel, text="=10m (1 Pixel:  m),")
+            str_meter_pro_pixel = '{:.2f}'.format(1/self.factor)
+            self.canvas.insert(self.canvas_text_pixel, 15, str_meter_pro_pixel)
+           
+            # generate resume-counter 
+            self.canvas_text_resumes = self.canvas.create_text(95 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
+            self.canvas.itemconfig(self.canvas_text_resumes, text="amount of resumes: ")
+            str_num_resumes = '{:.0f}'.format(self.num_Resumes)
+            self.canvas.insert(self.canvas_text_resumes, 19, str_num_resumes)
+            
 
             if plot_performance == True:
 
@@ -109,13 +189,22 @@ class Render():
                 self.plot_fig = Figure(figsize = (12.5, 3.9),dpi = 100)
 
                 # adding the subplots
-                self.plot1 = self.plot_fig.add_subplot(121,xlabel='Iteration (Step)',ylabel='F_res [N]', title='Centrifugal Force', box_aspect=1/1.5)
-                self.plot2 = self.plot_fig.add_subplot(122,xlabel='Iteration (Step)',ylabel='P [Nm/s/norm]', title = 'Absolute amount of power', box_aspect=1/1.5)
+                self.plot1 = self.plot_fig.add_subplot(121,xlabel='Iteration (Step)',ylabel='F_res [N]', title='Resulting Force', box_aspect=1/1.5)
+                self.plot2 = self.plot_fig.add_subplot(122,xlabel='Iteration (Step)',ylabel='P [Nm/s/norm]', title = 'Absolute amount of Power', box_aspect=1/1.5)
 
                 # creating the Tkinter canvas which contains the Matplotlib figures
                 self.plot_canvas = FigureCanvasTkAgg(self.plot_fig,master = self.render_gui)
                 self.plot_canvas.get_tk_widget().pack()
 
+        # generate resume-counter
+        if info['num_Resumes']> self.num_Resumes:
+            self.num_Resumes = info['num_Resumes']
+            str_num_resumes = '{:.0f}'.format(self.num_Resumes)
+            self.canvas.delete(self.canvas_text_resumes)
+            self.canvas_text_resumes = self.canvas.create_text(95 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
+            self.canvas.itemconfig(self.canvas_text_resumes, text="amount of resumes: ")
+            self.canvas.insert(self.canvas_text_resumes, 19, str_num_resumes)
+            
         # generate the performance efficiency data arrays like power and centrifugal force
         if plot_performance == True:
             if info != None:
@@ -130,7 +219,9 @@ class Render():
 
                 # plot the performance efficiency data
                 if self.render_step % 100 == 0:
+                    print(type(self.render_step_array))
                     self.render_step_array = np.arange(0,self.render_step+1,1)
+                    print(np.shape(self.render_step_array))
                     # self.plot1.plot(self.render_step_array,self.F_res, color = 'blue', linewidth = 0.5)
                     self.plot1.scatter(self.render_step_array,self.F_res, marker='.', color='blue', s=0.5,linewidth = 0.5)
                      # scat.set_offsets([self.render_step_array,self.F_res])
@@ -180,7 +271,6 @@ class Render():
         s09_line_data = list((np.ravel(([x_s09,y_s09]),'F'))) # list is neccessary for a correct separation with comma
 
         # generate car and sensor data
-        # if iteration !=0 and delete_old == True:
         if self.render_step !=0 and self.delete_old == True: # NEU ERSETZT
             self.canvas.delete(self.car_polygon)
             self.canvas.delete(self.car_s01)
@@ -196,13 +286,35 @@ class Render():
         self.car_s09 = self.canvas.create_line(s09_line_data, fill="black", width=1)
 
         self.render_step += 1 # NEU
-
-        if done == False:
+        
+        if self.done == False:
             self.render_gui.update()
-        else:
-            print("End of race")
+        if self.stop == True:
+            self.render_gui.destroy()
+        if self.done == True:
+            print(f'End of race, {self.render_step} steps needed.')
             self.render_gui.mainloop()
 
+        return self.stop
 
+    
     def close_render(self):
-        self.render_gui.destroy()
+        """
+        
+        Initiates the closing process of render window.
+
+        Parameters
+        ----------
+        None.
+        
+        Returns
+        -------
+        None.
+        
+        """
+        self.stop = True
+        if self.done == True:
+            self.render_gui.destroy()
+
+
+

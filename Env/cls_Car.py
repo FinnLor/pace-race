@@ -7,8 +7,8 @@ Created on Dec 2021
 
 
 from scipy import integrate
-from shapely.geometry import LineString, Point, Polygon
 from shapely.errors import ShapelyDeprecationWarning
+from shapely.geometry import LineString, Point, Polygon
 import math
 import numpy as np
 import warnings
@@ -245,11 +245,11 @@ class Car:
         self.corners = np.vstack((c1,c2,c3,c4,c5))
            
         # Set sensor end-points
-        s01 = c4 + np.dot(rot_sensor, (0, self.WIDTH*3) )
+        s01 = c4 + np.dot(rot_sensor, (0, self.WIDTH*4) )
         s03 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*30, self.WIDTH*2.5) )
-        s05 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*100, 0) )
+        s05 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*100, 0) ) # 100
         s07 = c4 + np.dot(rot_sensor, (self.SENS_SCALE*30, -self.WIDTH*2.5) )
-        s09 = c4 + np.dot(rot_sensor, (0, -self.WIDTH*3) )
+        s09 = c4 + np.dot(rot_sensor, (0, -self.WIDTH*4) )
         
         # Assign position of sensor to object
         self.s_ref = c4

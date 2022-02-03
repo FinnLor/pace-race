@@ -6,8 +6,8 @@ Created on Dec 2021
 """
 
 
-from shapely.geometry import LineString, Point
 from scipy.interpolate import interp1d 
+from shapely.geometry import LineString, Point
 import numpy as np
 
 
