@@ -16,7 +16,7 @@ from env_PaceRace import PaceRaceEnv
 
 
 ### CONFIGURATION
-config = {'total_timesteps': 400000,
+config = {'total_timesteps': 500,
           'log_keys': ('obs', 'act', 'Fres'),           # custom Logger
           'log_freq_epoch': 10,                         # custom Logger
           'log_freq_step': 10,                          # custom Logger
@@ -30,10 +30,11 @@ check_env(env, warn=True)
 
 
 ### MODEL SETUP
-# model = SAC("MlpPolicy",
-#             env,
-#             verbose=1
-#             )
+model = SAC("MlpPolicy",
+            env,
+            verbose=1,
+            seed=0
+            )
 
 # Load pre-trained model
 # model = SAC.load("models/sac_pace_race_FL_01_20220122.zip")
