@@ -112,8 +112,8 @@ class UIPace():
         
         # preferences
         self.master = master
-        self.CANVAS_WIDTH = 1396
-        self.CANVAS_HEIGHT = 664
+        self.CANVAS_WIDTH = 1296
+        self.CANVAS_HEIGHT = 584
         self.ROAD_WIDTH_MIN = 8
         self.ROAD_WIDTH_MAX = 40
         self.road_width = int(np.round(0.5*(self.ROAD_WIDTH_MIN+self.ROAD_WIDTH_MAX)))
@@ -122,31 +122,32 @@ class UIPace():
         self.model_ok = False
         self.points_x = []
         self.points_y = []
+        self.res = 1 # Dont change. 
         self.line_data = [] # prepared to generate
         self.GREEN = '#b3ffb3'
         self.YELLOW = '#ffff44'
         self.ORANGE = '#ff8844'
 
         # static text
-        self.label_LoadModelText = tk.Label(self.master, text ='UI FOR THE OKS-RL-PACERACE-PROJECT', font=('Arial 12 bold'))
+        self.label_LoadModelText = tk.Label(self.master, text ='OKS-RL-PACERACE-PROJECT', font=('Arial 12 bold'))
         self.label_LoadModelText.grid(row=0, column=0, sticky = 'W')
         self.label_RoadWidthText = tk.Label(self.master, text =f'Enter width of road as integer. Value range in meter [{self.ROAD_WIDTH_MIN}-{self.ROAD_WIDTH_MAX}]:')
         self.label_RoadWidthText.grid(row=1, column=0, sticky = 'W')
-        self.label_RoadPath = tk.Label(self.master, text = 'Set ad least two points as the course of the route (1 pixel equals 1 meter):')
+        self.label_RoadPath = tk.Label(self.master, text = f'Set min two points as course of the route (1 pixel = {self.res} meter):')
         self.label_RoadPath.grid(row=2, column=0,sticky = 'W')
         self.label_CloseUI = tk.Label(self.master, text = 'If data is valid so far, the data will be commited for rendering:')
         self.label_CloseUI.grid(row=3, column=0,sticky = 'W')
 
         # checkbuttons
         self.cb_old = tk.IntVar()
-        self.check_PlotOld = tk.Checkbutton(self.master, text = 'Plot old car pos', variable=self.cb_old, onvalue = 1, offvalue = 0)
+        self.check_PlotOld = tk.Checkbutton(self.master, text = 'Maintain car pos', variable=self.cb_old, onvalue = 1, offvalue = 0)
         self.check_PlotOld.grid(row=0, column=1)  
         self.cb_perf = tk.IntVar()
         self.check_PlotPerformance = tk.Checkbutton(self.master, text = 'Plot performance', variable=self.cb_perf, onvalue = 1, offvalue = 0)
         self.check_PlotPerformance.grid(row=0, column=2)  
         
         # create entry
-        self.entry_RoadWidth = tk.Entry(self.master, width = 10)
+        self.entry_RoadWidth = tk.Entry(self.master, width = 8)
         self.entry_RoadWidth.grid(row=1, column=2)
         self.entry_RoadWidth.insert('end', self.road_width)
         
@@ -437,17 +438,11 @@ class UIPace():
             data = np.transpose([x,y])
 
             # test road with the loaded model
-            env = PaceRaceEnv(P=1000, custom_center_line = data, custom_roadwidth=self.road_width, verbose =1)
+            env = PaceRaceEnv(custom_center_line = data, custom_roadwidth=self.road_width, verbose =1)
             obs = env.reset() # get initial obs
-            display = Render()
+            display = Render()  
             done = False
-            # for i in range(1000):
-            #     print(i)
-            #     env.step((0.3, 0.000))
-            #     display.update(env,False, info)
             while done == False:
-                # action = env.action_space.sample() # random
-                # obs, reward, done, info = env.step((0.001,0.1)) # manual
                 action, _state = self.model.predict(obs) # agent, get next action from last obs
                 obs, reward, done, info = env.step(action) # input action, get next obs
                 if self.cb_old.get() == 1:
@@ -485,7 +480,7 @@ def main():
 
     ui_pace = tk.Tk()
     ui_pace.title('UI_PaceIn')
-    ui_pace.geometry('1400x800')
+    ui_pace.geometry('1300x700')
     ui_pace.resizable(width=False, height=False)
     app = UIPace(ui_pace) # must stay in
     ui_pace.mainloop()
