@@ -7,8 +7,8 @@ Created on Dec 2021
 
 
 from scipy import integrate
-from shapely.geometry import LineString, Point, Polygon
 from shapely.errors import ShapelyDeprecationWarning
+from shapely.geometry import LineString, Point, Polygon
 import math
 import numpy as np
 import warnings
