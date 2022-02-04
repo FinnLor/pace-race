@@ -25,7 +25,7 @@ config = {'total_timesteps': 500,
 
 
 ### ENV SETUP
-env = Monitor(PaceRaceEnv(verbose = 1), filename=config['monitor_log_path'])
+env = Monitor(PaceRaceEnv(verbose = 0), filename=config['monitor_log_path'])
 check_env(env, warn=True)
 
 
@@ -33,15 +33,12 @@ check_env(env, warn=True)
 model = SAC("MlpPolicy",
             env,
             verbose=1,
-            seed=0
             )
 
 # Load pre-trained model
 # model = SAC.load("models/sac_pace_race_FL_01_20220122.zip")
 # model = SAC.load("models/sac_pace_race_FS_02_210122.zip")
-model = SAC.load("models/sac_pace_race_EM_01_230122_quite-good.zip")
-model.learning_rate = 3e-7
-model.verbose = 1
+# model = SAC.load("models/sac_pace_race_EM_takethis.zip")
 # Check validity of environment
 model.set_env(env)
 

@@ -92,10 +92,12 @@ class Render():
         self.num_Resumes = 0
         self.F_res = []
         self.P = []
+        self.RewardCheck = []
         self.done = False
         self.stop = False
         self.F_data = []
         self.P_data = []
+        self.R_data = []
 
 
     def update(self, env, done, info=None, plot_performance=False, delete_old = True, color="blue"):
@@ -191,25 +193,35 @@ class Render():
             if plot_performance == True:
 
                 # prepare the subplots
-                self.plot_fig = Figure(figsize = (11.5, 3),dpi = 100)
+                self.plot_fig = Figure(figsize = (11.5, 2.4),dpi = 100)
+                self.plot_fig.tight_layout()
                 x = np.linspace(0, self.xmax, self.xmax+1)
                 
                 # adding subplot1
-                self.plot1 = self.plot_fig.add_subplot(121,xlabel='Iteration (Step)',ylabel='F_res [N]', title='Resulting Force', box_aspect=1/2.3)
+                self.plot1 = self.plot_fig.add_subplot(131,xlabel='Iteration (Step)',ylabel='F_res [N]', title='Resulting Force', box_aspect=1/2.3)
                 self.plot1.plot(x,np.ones((self.xmax+1,1))*env.Fmax, color = 'red', linewidth = 0.5)
                 self.plot1.set_xlim(0,self.xmax)
                 self.plot1.set_ylim(0,1.05*env.Fmax)
                 self.scat1 = self.plot1.scatter(0,0, marker='.', color='blue', s=0.5,linewidth = 0.7)
                 
                 # adding subplot2
-                self.plot2 = self.plot_fig.add_subplot(122,xlabel='Iteration (Step)',ylabel='P [Nm/s/norm]', title = 'Absolute amount of Power', box_aspect=1/2.3)
+                self.plot2 = self.plot_fig.add_subplot(132,xlabel='Iteration (Step)',ylabel='P [Nm/s/norm]', title = 'Absolute amount of Power', box_aspect=1/2.3)
                 self.plot2.plot(x,np.ones((self.xmax+1,1))*(-1), color = 'red', linewidth = 0.5)
                 self.plot2.plot(x,np.zeros((self.xmax+1,1)), color = 'black', linewidth = 0.5)
                 self.plot2.plot(x,np.ones((self.xmax+1,1))*1, color = 'red', linewidth = 0.5)
                 self.plot2.set_xlim(0,self.xmax)
                 self.plot2.set_ylim(-1.10,1.10)
                 self.scat2 = self.plot2.scatter(0,0, marker='.', color='blue', s=0.5,linewidth = 0.7)
+                
+                # adding subplot3
+                self.plot3 = self.plot_fig.add_subplot(133,xlabel='Iteration (Step)',ylabel='SumRewards [1]', title = 'RewardCheck', box_aspect=1/2.3)
+                self.plot3.plot(x,np.zeros((self.xmax+1,1)), color = 'black', linewidth = 0.5)
+                self.plot3.set_xlim(0,self.xmax)
+                self.plot3.set_ylim(-1.10,1.10)
+                self.scat3 = self.plot3.scatter(0,0, marker='.', color='blue', s=0.5,linewidth = 0.7)
 
+                self.plot_fig.tight_layout()
+                
                 # creating the Tkinter canvas which contains the Matplotlib figures
                 self.plot_canvas = FigureCanvasTkAgg(self.plot_fig,master = self.render_gui)
                 self.plot_canvas.get_tk_widget().pack()
@@ -235,21 +247,37 @@ class Render():
                 P = info['act'][0]
                 self.P.append(P)
                 
+                # get sum_rewards
+                RewardCheck = info['RewardCheck']
+                self.RewardCheck.append(RewardCheck)
+                
                 # set it together
                 self.render_step_array.append(np.shape(self.render_step_array)[0])
                 self.F_data.append([np.shape(self.render_step_array)[0],F_res])
                 self.P_data.append([np.shape(self.render_step_array)[0],P])
-
+                self.R_data.append([np.shape(self.render_step_array)[0],RewardCheck])
+                min_R_data = np.min(self.R_data)
+                max_R_data = np.max(self.R_data)
+                
                 # plot the performance efficiency data
-                if self.render_step % 1 == 0:
+                if self.render_step % 100 == 0:
+                    
                     self.scat1.set_offsets(self.F_data)
                     self.plot1.set_xlim(0,self.render_step)
                     # self.scat1.update_scalarmappable()
                     self.scat1.axes.figure.canvas.draw_idle()
+                    
                     self.scat2.set_offsets(self.P_data)
                     self.plot2.set_xlim(0,self.render_step)
                     # self.scat2.update_scalarmappable()
                     self.scat2.axes.figure.canvas.draw_idle()
+
+                    self.scat3.set_offsets(self.R_data)
+                    self.plot3.set_xlim(0,self.render_step)
+                    self.plot3.set_ylim(min_R_data,max_R_data)
+                    self.scat3.update_scalarmappable()
+                    self.scat3.axes.figure.canvas.draw_idle()
+                    
                     # self.plot_fig.canvas.flush_events() 
             else:
                 print('No Info loaded')

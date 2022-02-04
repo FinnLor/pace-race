@@ -411,7 +411,7 @@ class UIPace():
                     plot_performance = True
                 else:
                     plot_performance = False    
-                    
+                print(reward)
                 done = display.update(env, done, info, plot_performance, delete_old, color='blue') # render that current obs
 
 
