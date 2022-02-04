@@ -16,16 +16,16 @@ from env_PaceRace import PaceRaceEnv
 
 
 ### CONFIGURATION
-config = {'total_timesteps': 500,
+config = {'total_timesteps': 200_000,
           'log_keys': ('obs', 'act', 'Fres'),           # custom Logger
           'log_freq_epoch': 10,                         # custom Logger
-          'log_freq_step': 10,                          # custom Logger
+          'log_freq_step': 1,                          # custom Logger
           'monitor_log_path': 'TrainLog/DefaultLog',    # integrated Logger
           'save_path_models': "models//sac_pace_race"}
 
 
 ### ENV SETUP
-env = Monitor(PaceRaceEnv(verbose = 0), filename=config['monitor_log_path'])
+env = Monitor(PaceRaceEnv(verbose = 0, ROADLENGTH=8), filename=config['monitor_log_path'])
 check_env(env, warn=True)
 
 
