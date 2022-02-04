@@ -131,8 +131,8 @@ class PaceRaceEnv(gym.Env):
         # Initialize counter
         self.num_episodes = -1
         self.num_iterations = 0
-        self.needed_iterations = 0
         self.episode_reward = 0
+        self.Reward_Check = 0
         self.counter = 0
         self.num_Resumes = 0
         
@@ -265,25 +265,24 @@ class PaceRaceEnv(gym.Env):
                
         reward = 0
         #1
-        reward -= 3 # penalize time on track
+        reward -= 7 # penalize time on track
         #2
         if done:
             reward += 2000
         #3                       
-
         if self.num_iterations > 2000 and not done: # stop after a maximum o n iterations
             done = True
-            reward += -100 + curr_path_length * 200 # if stopped by exceeding time limit, reward proportionally to achieved progress
+            reward += -3000 + curr_path_length * 3000 # if stopped by exceeding time limit, reward proportionally to achieved progress
             print(f'reached path_length: {curr_path_length}')
         #4
         if violation: # penalize violation (collision or force-check)
             # reward -= (300 + self.num_episodes)
-            reward -= 400
+            reward -= 500
         #5    
-        reward += 0.3*self.car01.vlon
+        reward += 0.6*self.car01.vlon
         
         # slight negative reward for omega
-        # reward -= 1*np.abs(self.car01.omega)
+        reward -= 0.1*np.abs(self.car01.omega)
         
         # if a < 0:
         #     reward -= 2
@@ -299,17 +298,21 @@ class PaceRaceEnv(gym.Env):
         # update reward
         self.episode_reward += reward
         
+        # self.Reward_Check +=self.episode_reward # only needed if we want to cumulate the reward again
+        self.Reward_Check =self.episode_reward # also only needed if we want to cumulate the reward again
+        
         # Update path_length
         self.last_path_length = curr_path_length
         
         # Get sensordata of a car
         sensdist = self.car01.get_sensordata(self.road, normalized=True)
         
+
         # Summarize observations
         observation = np.concatenate((np.array([self.car01.vlon, self.car01.vlat, self.car01.omega, self.car01.delta]), np.min(sensdist, axis = 1)), axis=None) # add MU for param study
         
         # Update info-dict
-        info = {"obs": observation, "act": action, "Fres": Fres, "num_Resumes": self.num_Resumes}
+        info = {"obs": observation, "act": action, "Fres": Fres, "num_Resumes": self.num_Resumes, "RewardCheck": self.Reward_Check}
         
         # Print to terminal
         if self.verbose == 1: 
@@ -337,7 +340,6 @@ class PaceRaceEnv(gym.Env):
     
         # Reset counter   
         self.episode_reward = 0 # track cumulative reward per episode
-        self.needed_iterations = self.num_iterations
         self.num_iterations = 0
         self.num_episodes += 1
          
