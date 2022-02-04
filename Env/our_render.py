@@ -74,22 +74,28 @@ class Render():
         None.
 
         """
+        
         # self.render_gui = render_gui
         self.render_gui = tk.Tk() # parent window for canvas
         self.render_gui.title('our_render')
         tk.Button(self.render_gui, text="Quit", command=self.close_render, width=10).pack()
-        self.CANVAS_WIDTH = 1600
+        self.CANVAS_WIDTH = 1725
         self.CANVAS_HEIGHT = 700
+        self.xmax = 2000
+        self.GREY = '#aaaaaa'
+        self.BLACK = '#000000'
         self.RENDER_ANY = 1
         self.canvas = tk.Canvas(self.render_gui, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT, bg='white') # canvas is the rendering area
         self.canvas.pack() # required to visualize the canvas
         self.render_step = 0
-        self.render_step_array = np.array([])
+        self.render_step_array = []
         self.num_Resumes = 0
         self.F_res = []
         self.P = []
         self.done = False
         self.stop = False
+        self.F_data = []
+        self.P_data = []
 
 
     def update(self, env, done, info=None, plot_performance=False, delete_old = True, color="blue"):
@@ -182,15 +188,27 @@ class Render():
             str_num_resumes = '{:.0f}'.format(self.num_Resumes)
             self.canvas.insert(self.canvas_text_resumes, 19, str_num_resumes)
             
-
             if plot_performance == True:
 
-                # create figure that will contain the plots
-                self.plot_fig = Figure(figsize = (12.5, 3.9),dpi = 100)
-
-                # adding the subplots
-                self.plot1 = self.plot_fig.add_subplot(121,xlabel='Iteration (Step)',ylabel='F_res [N]', title='Resulting Force', box_aspect=1/1.5)
-                self.plot2 = self.plot_fig.add_subplot(122,xlabel='Iteration (Step)',ylabel='P [Nm/s/norm]', title = 'Absolute amount of Power', box_aspect=1/1.5)
+                # prepare the subplots
+                self.plot_fig = Figure(figsize = (11.5, 3),dpi = 100)
+                x = np.linspace(0, self.xmax, self.xmax+1)
+                
+                # adding subplot1
+                self.plot1 = self.plot_fig.add_subplot(121,xlabel='Iteration (Step)',ylabel='F_res [N]', title='Resulting Force', box_aspect=1/2.3)
+                self.plot1.plot(x,np.ones((self.xmax+1,1))*env.Fmax, color = 'red', linewidth = 0.5)
+                self.plot1.set_xlim(0,self.xmax)
+                self.plot1.set_ylim(0,1.05*env.Fmax)
+                self.scat1 = self.plot1.scatter(0,0, marker='.', color='blue', s=0.5,linewidth = 0.7)
+                
+                # adding subplot2
+                self.plot2 = self.plot_fig.add_subplot(122,xlabel='Iteration (Step)',ylabel='P [Nm/s/norm]', title = 'Absolute amount of Power', box_aspect=1/2.3)
+                self.plot2.plot(x,np.ones((self.xmax+1,1))*(-1), color = 'red', linewidth = 0.5)
+                self.plot2.plot(x,np.zeros((self.xmax+1,1)), color = 'black', linewidth = 0.5)
+                self.plot2.plot(x,np.ones((self.xmax+1,1))*1, color = 'red', linewidth = 0.5)
+                self.plot2.set_xlim(0,self.xmax)
+                self.plot2.set_ylim(-1.10,1.10)
+                self.scat2 = self.plot2.scatter(0,0, marker='.', color='blue', s=0.5,linewidth = 0.7)
 
                 # creating the Tkinter canvas which contains the Matplotlib figures
                 self.plot_canvas = FigureCanvasTkAgg(self.plot_fig,master = self.render_gui)
@@ -209,30 +227,30 @@ class Render():
         if plot_performance == True:
             if info != None:
 
-                # get power
-                P = info['act'][0]
-                self.P.append(P)
-
                 # get resolution forces
                 F_res = info['Fres']
                 self.F_res.append(F_res)
+                
+                # get power
+                P = info['act'][0]
+                self.P.append(P)
+                
+                # set it together
+                self.render_step_array.append(np.shape(self.render_step_array)[0])
+                self.F_data.append([np.shape(self.render_step_array)[0],F_res])
+                self.P_data.append([np.shape(self.render_step_array)[0],P])
 
                 # plot the performance efficiency data
-                if self.render_step % 100 == 0:
-                    print(type(self.render_step_array))
-                    self.render_step_array = np.arange(0,self.render_step+1,1)
-                    print(np.shape(self.render_step_array))
-                    # self.plot1.plot(self.render_step_array,self.F_res, color = 'blue', linewidth = 0.5)
-                    self.plot1.scatter(self.render_step_array,self.F_res, marker='.', color='blue', s=0.5,linewidth = 0.5)
-                     # scat.set_offsets([self.render_step_array,self.F_res])
-                    self.plot1.plot(self.render_step_array,np.repeat(0,np.shape(self.render_step_array)[0]), color = 'black', linewidth = 0.5)
-                    self.plot1.plot(self.render_step_array,np.repeat(env.Fmax,np.shape(self.render_step_array)[0]), color = 'red', linewidth = 0.5)
-                    # self.plot2.plot(self.render_step_array,self.P, color = 'blue', linewidth = 0.5)
-                    self.plot2.scatter(self.render_step_array,self.P, marker='.', color='blue', s=0.5,linewidth = 0.5)
-                    self.plot2.plot(self.render_step_array,np.repeat(1,np.shape(self.render_step_array)[0]), color = 'red', linewidth = 0.5)
-                    self.plot2.plot(self.render_step_array,np.repeat(-1,np.shape(self.render_step_array)[0]), color = 'red', linewidth = 0.5)
-                    self.plot_canvas.draw()
-                    # self.plot_canvas.flush_events()
+                if self.render_step % 1 == 0:
+                    self.scat1.set_offsets(self.F_data)
+                    self.plot1.set_xlim(0,self.render_step)
+                    # self.scat1.update_scalarmappable()
+                    self.scat1.axes.figure.canvas.draw_idle()
+                    self.scat2.set_offsets(self.P_data)
+                    self.plot2.set_xlim(0,self.render_step)
+                    # self.scat2.update_scalarmappable()
+                    self.scat2.axes.figure.canvas.draw_idle()
+                    # self.plot_fig.canvas.flush_events() 
             else:
                 print('No Info loaded')
 
@@ -272,18 +290,21 @@ class Render():
 
         # generate car and sensor data
         if self.render_step !=0 and self.delete_old == True: # NEU ERSETZT
+            sensor_color = self.BLACK
             self.canvas.delete(self.car_polygon)
             self.canvas.delete(self.car_s01)
             self.canvas.delete(self.car_s03)
             self.canvas.delete(self.car_s05)
             self.canvas.delete(self.car_s07)
             self.canvas.delete(self.car_s09)
+        else:
+            sensor_color = self.GREY
         self.car_polygon = self.canvas.create_polygon(car01_data, fill=color, width=1)
-        self.car_s01 = self.canvas.create_line(s01_line_data, fill="black", width=1)
-        self.car_s03 = self.canvas.create_line(s03_line_data, fill="black", width=1)
-        self.car_s05 = self.canvas.create_line(s05_line_data, fill="black", width=1)
-        self.car_s07 = self.canvas.create_line(s07_line_data, fill="black", width=1)
-        self.car_s09 = self.canvas.create_line(s09_line_data, fill="black", width=1)
+        self.car_s01 = self.canvas.create_line(s01_line_data, fill=sensor_color, width=1)
+        self.car_s03 = self.canvas.create_line(s03_line_data, fill=sensor_color, width=1)
+        self.car_s05 = self.canvas.create_line(s05_line_data, fill=sensor_color, width=1)
+        self.car_s07 = self.canvas.create_line(s07_line_data, fill=sensor_color, width=1)
+        self.car_s09 = self.canvas.create_line(s09_line_data, fill=sensor_color, width=1)
 
         self.render_step += 1 # NEU
         
@@ -313,7 +334,7 @@ class Render():
         
         """
         self.stop = True
-        if self.done == True:
+        if self.done:
             self.render_gui.destroy()
 
 

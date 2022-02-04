@@ -130,11 +130,9 @@ class PaceRaceEnv(gym.Env):
         
         # Initialize counter
         self.num_episodes = -1
-        self.num_episodes_old = -1
         self.num_iterations = 0
         self.needed_iterations = 0
         self.episode_reward = 0
-        self.episode_reward_old = 0
         self.counter = 0
         self.num_Resumes = 0
         
@@ -157,12 +155,9 @@ class PaceRaceEnv(gym.Env):
         self.max_power = P # for accelerating
         self.min_power = -P # for decelerating
 
-        # self.max_delta_steering_angle = 30*CT*np.pi/180 # Zeitabhängig. entspricht 3 Grad Lenkwinkel der Räder pro Sekunde => ###########
-        # self.min_delta_steering_angle = -30*CT*np.pi/180         ############### !!! DAS IST FALSCH !!! ############################
-        
-        self.max_delta_steering_angle = 60*CT*np.pi/180 # Zeitabhängig. entspricht 6 Grad Lenkwinkel der Räder pro Sekunde => ###########
-        self.min_delta_steering_angle = -60*CT*np.pi/180         ############### !!! DAS IST FALSCH !!! ############################
-        
+        self.max_delta_steering_angle = 15*CT*np.pi/180 # Zeitabhängig. entspricht 6 Grad Lenkwinkel der Räder pro Sekunde
+        self.min_delta_steering_angle = -15*CT*np.pi/180
+
         self.max_total_steering_angle = 45*np.pi/180
         self.min_total_steering_angle = -45*np.pi/180   
 
@@ -275,9 +270,10 @@ class PaceRaceEnv(gym.Env):
         if done:
             reward += 2000
         #3                       
-        if self.num_iterations > 3000 and not done: # stop after a maximum o n iterations
+
+        if self.num_iterations > 2000 and not done: # stop after a maximum o n iterations
             done = True
-            reward += -3000 + curr_path_length * 3000 # if stopped by exceeding time limit, reward proportionally to achieved progress
+            reward += -100 + curr_path_length * 200 # if stopped by exceeding time limit, reward proportionally to achieved progress
             print(f'reached path_length: {curr_path_length}')
         #4
         if violation: # penalize violation (collision or force-check)
@@ -287,8 +283,7 @@ class PaceRaceEnv(gym.Env):
         reward += 0.3*self.car01.vlon
         
         # slight negative reward for omega
-        reward -= 1*np.abs(self.car01.omega)
-        
+        # reward -= 1*np.abs(self.car01.omega)
         
         # if a < 0:
         #     reward -= 2
@@ -297,30 +292,10 @@ class PaceRaceEnv(gym.Env):
         #     reward += 3
         # if curr_path_length < self.last_path_length: # punish driving backward
         #     reward -= 5
-        
+
         # Get sensordata of a car
         sensdist = self.car01.get_sensordata(self.road, normalized=True)
         
-        # maximize s5-sensordistance
-        if self.num_episodes < 10:
-            reward -= 1*(1-np.min(sensdist[0,:]))
-            reward -= 1*(1-np.min(sensdist[1,:]))
-            reward -= 1*(1-np.min(sensdist[2,:]))
-            reward -= 1*(1-np.min(sensdist[3,:]))
-            reward -= 1*(1-np.min(sensdist[4,:]))
-        elif self.num_episodes < 100:
-            reward -= 0.1*(1-np.min(sensdist[0,:]))
-            reward -= 0.2*(1-np.min(sensdist[1,:]))
-            reward -= 0.2*(1-np.min(sensdist[2,:]))
-            reward -= 0.2*(1-np.min(sensdist[3,:]))
-            reward -= 0.1*(1-np.min(sensdist[4,:]))
-        else:
-            reward -= 0.01*(1-np.min(sensdist[0,:]))
-            reward -= 0.01*(1-np.min(sensdist[1,:]))
-            reward -= 0.01*(1-np.min(sensdist[2,:]))
-            reward -= 0.01*(1-np.min(sensdist[3,:]))
-            reward -= 0.01*(1-np.min(sensdist[4,:]))
-    
         # update reward
         self.episode_reward += reward
         
@@ -338,10 +313,7 @@ class PaceRaceEnv(gym.Env):
         
         # Print to terminal
         if self.verbose == 1: 
-            # print(f"=== counter: {self.counter} === no-episode:  {self.num_episodes:04.0F}")
-            if self.num_episodes > self.num_episodes_old:
-                self.num_episodes_old = self.num_episodes
-                print(f"=== episode: {self.num_episodes:04.0F} === iterations: {self.needed_iterations} === reward: {self.episode_reward_old:05.0F}")
+            print(f"=== counter: {self.counter} === episode:  {self.num_episodes:04.0F}")
         elif self.verbose == 2:
             print(f"action_scaled: {action_scaled[0]:09.2F} || a: {a:06.2F} || v_lon: {self.car01.vlon:05.2F} || pos: {np.round(curr_path_length,4)} || epoch: {self.num_episodes:04.0F} || eprew: {self.episode_reward} || iter: {self.num_iterations}, || counter: {self.counter}")
         if self.verbose != 0:
@@ -364,7 +336,6 @@ class PaceRaceEnv(gym.Env):
             print(10*"---" + "**reset**" + 10*"---")    
     
         # Reset counter   
-        self.episode_reward_old = self.episode_reward
         self.episode_reward = 0 # track cumulative reward per episode
         self.needed_iterations = self.num_iterations
         self.num_iterations = 0
