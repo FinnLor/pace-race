@@ -129,7 +129,7 @@ class PaceRaceEnv(gym.Env):
         self.Fmax = M * 9.81 * MU 
         
         # Initialize counter
-        self.num_episodes = -1
+        self.num_episodes = 0
         self.num_iterations = 0
         self.episode_reward = 0
         self.Reward_Check = 0
@@ -155,7 +155,7 @@ class PaceRaceEnv(gym.Env):
         self.max_power = P # for accelerating
         self.min_power = -P # for decelerating
 
-        self.max_delta_steering_angle = 15*CT*np.pi/180 # Zeitabhängig. entspricht 6 Grad Lenkwinkel der Räder pro Sekunde
+        self.max_delta_steering_angle = 15*CT*np.pi/180 # time dependant, equals 15 deg/s
         self.min_delta_steering_angle = -15*CT*np.pi/180
 
         self.max_total_steering_angle = 45*np.pi/180
@@ -241,7 +241,7 @@ class PaceRaceEnv(gym.Env):
             # Collision check
             collision_check = self.car01.collision_check(self.road)
             
-            # Check whether centrifugal force to high
+            # Check whether centrifugal force too high
             force_exceeded = Fres > self.Fmax
             
             # Bool to check whether limits were violated
@@ -265,35 +265,45 @@ class PaceRaceEnv(gym.Env):
                
         reward = 0
         #1
-        reward -= 7 # penalize time on track
+        # reward -= 7 # penalize time on track
+        
         #2
-        if done:
-            reward += 2000
+        # if done:
+        #     reward += 2000
+        
         #3                       
         if self.num_iterations > 2000 and not done: # stop after a maximum o n iterations
             done = True
-            reward += -3000 + curr_path_length * 3000 # if stopped by exceeding time limit, reward proportionally to achieved progress
-            print(f'reached path_length: {curr_path_length}')
+            # reward += -3000 + curr_path_length * 3000 # if stopped by exceeding time limit, reward proportionally to achieved progress
+            # print(f'reached path_length: {curr_path_length}')
+            
         #4
         if violation: # penalize violation (collision or force-check)
             # reward -= (300 + self.num_episodes)
-            reward -= 500
+            reward -= (500*math.log(0.01*self.num_episodes + 1.3))
+            
         #5    
-        reward += 0.6*self.car01.vlon
+        # reward += 0.6*self.car01.vlon
         
+        #6
+        reward += ((200*curr_path_length**3 * (math.exp(-1e-3*self.num_iterations+4)+2.5)) - self.rewEval) # finite difference gradient
+        self.rewEval = 200*curr_path_length**3 * (math.exp(-1e-3*self.num_iterations+4)+2.5) # value of empiric reward function
+        
+        #7
         # slight negative reward for omega
-        reward -= 0.1*np.abs(self.car01.omega)
+        # reward -= 0.1*np.abs(self.car01.omega)
         
+        #8
         # if a < 0:
         #     reward -= 2
         
+        #9
         # if curr_path_length - self.last_path_length > 0.2: # reward driving forward
         #     reward += 3
+        
+        #10
         # if curr_path_length < self.last_path_length: # punish driving backward
         #     reward -= 5
-
-        # Get sensordata of a car
-        sensdist = self.car01.get_sensordata(self.road, normalized=True)
         
         # update reward
         self.episode_reward += reward
@@ -342,6 +352,7 @@ class PaceRaceEnv(gym.Env):
         self.episode_reward = 0 # track cumulative reward per episode
         self.num_iterations = 0
         self.num_episodes += 1
+        self.rewEval = 0 # value of empiric reward function
          
         # self.MU = round(random.uniform(0.3,1.0),2) # variable friction coefficient
         
