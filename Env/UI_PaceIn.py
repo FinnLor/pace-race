@@ -117,7 +117,7 @@ class UIPace():
 
         self.ROAD_WIDTH_MIN = 8
         self.ROAD_WIDTH_MAX = 40
-        self.road_width = 8#int(np.round(0.5*(self.ROAD_WIDTH_MIN+self.ROAD_WIDTH_MAX)))
+        self.road_width = int(np.round(0.5*(self.ROAD_WIDTH_MIN+self.ROAD_WIDTH_MAX)))
         self.width_ok = False
         self.length_ok = False
         self.model_ok = False

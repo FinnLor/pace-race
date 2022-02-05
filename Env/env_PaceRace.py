@@ -366,7 +366,7 @@ class PaceRaceEnv(gym.Env):
         # Construct new road
         if np.any(self.custom_center_line) == None:
             if  self.roadwidth == None:
-                self.roadwidth = round(random.uniform(self.car01.WIDTH*5,self.car01.WIDTH*10), 2)
+                self.roadwidth = round(random.uniform(self.car01.WIDTH*4,self.car01.WIDTH*20), 2)
             self.road = Road(ROADWIDTH=self.roadwidth, ROADLENGTH = self.ROADLENGTH, NPOINTS = 1000)
         else:
             self.road = Road(ROADWIDTH=self.roadwidth, custom_center_line = self.custom_center_line)
