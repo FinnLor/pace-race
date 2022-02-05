@@ -396,7 +396,7 @@ class UIPace():
         if self.model_ok == True:
             
             # test road with a random model
-            env = PaceRaceEnv(verbose =1)
+            env = PaceRaceEnv(custom_roadwidth=self.road_width, verbose =1)
             obs = env.reset() # get initial obs
             display = Render()
             done = False
