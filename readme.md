@@ -11,12 +11,13 @@ In Progress.
 ### Dependencies
 
 * csv
-* gym 
-* json 
-* math   
+* gym
+* json
+* math
+* matplotlib   
 * numpy  
 * os  
-* pandas 
+* pandas
 * pillow   
 * random  
 * scipy  
@@ -34,8 +35,7 @@ git clone https://github.com/FinnLor/pace-race.git
 
 All you need is in ```Env/```
 * Use RL_pace_race.py to train an agent for a specified number of iterations
-* Test the agent on randomized tracks by running test_execute.py
-* Define your own track in UI_PaceIn.py, upon closing the specified agent will run the track
+* UI_PaceIn.py opens a GUI where you can load a SAC model and run it either on randomized tracks or on a track that you individually specify by width and path points
 
 
 ## Authors
@@ -52,4 +52,3 @@ Felix Schönig
 
 * Pre-Alpha
     * work-in-progress
-
