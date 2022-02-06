@@ -28,6 +28,10 @@ class Render():
         Width of the canvas.
     CANVAS_HEIGHT: int
         Height of the canvas.
+    X_MAX: int
+        maximal amount of steps for which the plots are being prepared
+        Hint: is currently overwritten, 
+        could be neccesssary to improve plot performance
     RENDER_ANY: int
         Steps between each render-process.
     canvas : tkinter.Canvas
@@ -81,8 +85,8 @@ class Render():
         tk.Button(self.render_gui, text="Quit", command=self.close_render, width=10).pack()
         self.CANVAS_WIDTH = 1725
         self.CANVAS_HEIGHT = 700
-        self.xmax = 2000
-        self.GREY = '#aaaaaa'
+        self.X_MAX = 2000
+        self.GREY = '#AAAAAA'
         self.BLACK = '#000000'
         self.RENDER_ANY = 1
         self.canvas = tk.Canvas(self.render_gui, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT, bg='white') # canvas is the rendering area
@@ -123,7 +127,8 @@ class Render():
         
         Returns
         -------
-        None.
+        stop : bool
+            Returns 'True' on calling function if user would like to stop the rendering.
         
         """
 
@@ -195,28 +200,28 @@ class Render():
                 # prepare the subplots
                 self.plot_fig = Figure(figsize = (11.5, 2.4),dpi = 100)
                 self.plot_fig.tight_layout()
-                x = np.linspace(0, self.xmax, self.xmax+1)
+                x = np.linspace(0, self.X_MAX, self.X_MAX+1)
                 
                 # adding subplot1
                 self.plot1 = self.plot_fig.add_subplot(131,xlabel='Iteration (Step)',ylabel='F_res [N]', title='Resulting Force', box_aspect=1/2.3)
-                self.plot1.plot(x,np.ones((self.xmax+1,1))*env.Fmax, color = 'red', linewidth = 0.5)
-                self.plot1.set_xlim(0,self.xmax)
+                self.plot1.plot(x,np.ones((self.X_MAX+1,1))*env.Fmax, color = 'red', linewidth = 0.5)
+                self.plot1.set_xlim(0,self.X_MAX)
                 self.plot1.set_ylim(0,1.05*env.Fmax)
                 self.scat1 = self.plot1.scatter(0,0, marker='.', color='blue', s=0.5,linewidth = 0.7)
                 
                 # adding subplot2
-                self.plot2 = self.plot_fig.add_subplot(132,xlabel='Iteration (Step)',ylabel='P [Nm/s/norm]', title = 'Absolute amount of Power', box_aspect=1/2.3)
-                self.plot2.plot(x,np.ones((self.xmax+1,1))*(-1), color = 'red', linewidth = 0.5)
-                self.plot2.plot(x,np.zeros((self.xmax+1,1)), color = 'black', linewidth = 0.5)
-                self.plot2.plot(x,np.ones((self.xmax+1,1))*1, color = 'red', linewidth = 0.5)
-                self.plot2.set_xlim(0,self.xmax)
+                self.plot2 = self.plot_fig.add_subplot(132,xlabel='Iteration (Step)',ylabel='P [Nm/s/norm]', title = 'Amount of Power', box_aspect=1/2.3)
+                self.plot2.plot(x,np.ones((self.X_MAX+1,1))*(-1), color = 'red', linewidth = 0.5)
+                self.plot2.plot(x,np.zeros((self.X_MAX+1,1)), color = 'black', linewidth = 0.5)
+                self.plot2.plot(x,np.ones((self.X_MAX+1,1))*1, color = 'red', linewidth = 0.5)
+                self.plot2.set_xlim(0,self.X_MAX)
                 self.plot2.set_ylim(-1.10,1.10)
                 self.scat2 = self.plot2.scatter(0,0, marker='.', color='blue', s=0.5,linewidth = 0.7)
                 
                 # adding subplot3
                 self.plot3 = self.plot_fig.add_subplot(133,xlabel='Iteration (Step)',ylabel='SumRewards [1]', title = 'RewardCheck', box_aspect=1/2.3)
-                self.plot3.plot(x,np.zeros((self.xmax+1,1)), color = 'black', linewidth = 0.5)
-                self.plot3.set_xlim(0,self.xmax)
+                self.plot3.plot(x,np.zeros((self.X_MAX+1,1)), color = 'black', linewidth = 0.5)
+                self.plot3.set_xlim(0,self.X_MAX)
                 self.plot3.set_ylim(-1.10,1.10)
                 self.scat3 = self.plot3.scatter(0,0, marker='.', color='blue', s=0.5,linewidth = 0.7)
 
@@ -232,7 +237,7 @@ class Render():
             str_num_resumes = '{:.0f}'.format(self.num_Resumes)
             self.canvas.delete(self.canvas_text_resumes)
             self.canvas_text_resumes = self.canvas.create_text(95 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
-            self.canvas.itemconfig(self.canvas_text_resumes, text="amount of resumes: ")
+            self.canvas.itemconfig(self.canvas_text_resumes, text="Amount of Resumes: ")
             self.canvas.insert(self.canvas_text_resumes, 19, str_num_resumes)
             
         # generate the performance efficiency data arrays like power and centrifugal force
@@ -264,12 +269,10 @@ class Render():
                     
                     self.scat1.set_offsets(self.F_data)
                     self.plot1.set_xlim(0,self.render_step)
-                    # self.scat1.update_scalarmappable()
                     self.scat1.axes.figure.canvas.draw_idle()
                     
                     self.scat2.set_offsets(self.P_data)
                     self.plot2.set_xlim(0,self.render_step)
-                    # self.scat2.update_scalarmappable()
                     self.scat2.axes.figure.canvas.draw_idle()
 
                     self.scat3.set_offsets(self.R_data)

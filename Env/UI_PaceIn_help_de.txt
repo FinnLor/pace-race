@@ -1,0 +1,60 @@
+Kurzes Manual zu UI_PaceIn
+
+Nutzen von UI_PaceIn
+Diese UI dient dem vereinfachten Import von PaceRace-Agenten und der visualisierung 
+des Verhaltens dieser Agenten auf verschiedene Strecken.
+Dafür stehen ein paar Optionen zur Verfügung, die im Folgenden kurz erläutert werden.
+Eine alphabetische Auflistung der möglichen Optionen ist dahinter beigefügt.
+
+Zunächst erfolgen zwei beispielhafte Vorgehensweisen in chronologischer Form:
+
+Einfachste Variante:
+Schritt 1: Laden eines Modells mit dem 'Load Model'
+Schritt 2: Starten des Renderings mit 'Take Random Track'
+
+Komplexere Variante:
+Schritt 1: wie oben
+Optionale Schritte: 
+- Auswahl der Checkboxen 'Maintain car pos' und oder 'Plot performance'.
+- Eingabe der Strassenbreite (Voreinstellung: 24m) und übernehmen mit 'Apply Width'.
+- Eingabe einer Punktefolge in Canvas (ohne Überschneidung) und übernehmen mit 'Apply Track'.
+- Löschen einer Strecke mit 'Clear Track' und anschließender optionaler Neueingabe.
+- Starten des Renderings mit einer zufallsgenerierten Strecke 'Take Random Track' 
+  oder der manuell generierten Strecke 'Take User Track'.
+
+Alphabetische Kurzübersicht über die Opotionen:
+
+Apply Track (Button):
+   Übernahme des im Canvas dargestellten Strassenzuges als Mittellinie.
+Apply Width (Button):
+   Übernahme der im Entry-Button eingegebenen Straßenbreite.
+Clear Track (Button):
+   Löschen des Straßenzugs. Dies Ermöglicht die Neueingabe.
+Load Model (Button):
+   Laden eines Agenten, welches mit dem SAC-Algorithmus von 
+   stable-baselines3 erstellt wurde.
+   Hinweis: Derzeit lassen sich nur SAC-Modelle laden.
+Maintain Car Pos (Checkbox):
+   Anwählen dieser Checkbox sorgt dafür, dass alle Fahrzeugpositionen während des Renderns
+   visualisiert werden.
+More => Help (Menüpunkt):
+   Diese kurze Hilfe.
+More => About (Menüpunkt):
+   Kurzinfo über das Projekt.
+Plot Performance (Checkbox):
+   Zusätzliche Ausgabe folgender Diagramme während des Renderns:
+   - Auftrag der Resultierenden Kräfte 'F_res' über die Iterationen 'Steps'.
+   - Auftrag der normalisierten Leistung 'P' Wertebereich: [-1:1] über die Iterationen 'Steps'.
+   - Auftrag des kumulierten Rewards 'SumRewards' über die Iterationen 'Steps'.
+Quit (Menuleiste): 
+   Beenden von UI_PaceIn.
+Straßenbreite (Entry Button):
+   Eingabe einer Straßenbreite als integer, innerhalb des vorgegebenen Wertebereiches [8:40]
+Take Random Track (Button):
+   Startet eine Render-Episode mit einer zufällig generierten Strecke und dem geladenen Modell.
+Take User Track (Button):
+   Startet eine Render-Episode mit der manuell erstellten Strecke und dem geladenen Modell.
+
+
+
+
