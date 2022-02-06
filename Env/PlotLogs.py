@@ -29,7 +29,7 @@ path = r'TrainLog\CustomLog'
 df = LogTraining.load_Log(path)
 
 ### Load data into dataframe
-path = r'TrainLog\DefaultLog'
+path_def = r'TrainLog\DefaultLog'
 df_def = LogTraining.load_Log(path)
 
 ### Plot
