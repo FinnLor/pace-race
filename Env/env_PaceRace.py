@@ -249,15 +249,13 @@ class PaceRaceEnv(gym.Env):
             
             # Set car to resume-position, when violation
             if violation:
-                # done = True
-                resume_successful = self.car01.set_resume_pos(self.road)
-                if self.verbose != 0:
-                    self.num_Resumes += 1
-                    print(f"--got resumed! at {self.num_iterations}")
-                if resume_successful == False:
-                    raise NotImplementedError(f"Calculation of psi failed: {self.num_iterations}")
-        else:
-            violation = False
+                done = True
+                # resume_successful = self.car01.set_resume_pos(self.road)
+                # if self.verbose != 0:
+                #     self.num_Resumes += 1
+                #     print(f"--got resumed! at {self.num_iterations}")
+                # if resume_successful == False:
+                #     raise NotImplementedError(f"Calculation of psi failed: {self.num_iterations}")
             
         ######################################################################
         ####################### --- REWARD SECTION --- ####################### 
@@ -280,7 +278,8 @@ class PaceRaceEnv(gym.Env):
         #4
         if violation: # penalize violation (collision or force-check)
             # reward -= (300 + self.num_episodes)
-            reward -= (500*math.log(0.01*self.num_episodes + 1.3))
+            # reward -= (500*math.log(0.01*self.num_episodes + 1.3))
+            pass
             
         #5    
         # reward += 0.6*self.car01.vlon

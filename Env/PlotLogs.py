@@ -7,6 +7,7 @@ Created on Tue Feb  1 22:34:19 2022
 
 import LogTraining
 import matplotlib.pyplot as plt
+# %matplotlib qt # run in console to externalize figures
 
 def my_plotter(ax, xData, yData, title, xlabel, ylabel, param_dict):
     """
@@ -27,6 +28,10 @@ def my_plotter(ax, xData, yData, title, xlabel, ylabel, param_dict):
 path = r'TrainLog\CustomLog'
 df = LogTraining.load_Log(path)
 
+### Load data into dataframe
+path_def = r'TrainLog\DefaultLog'
+df_def = LogTraining.load_Log(path)
+
 ### Plot
 
 # example 1
@@ -41,4 +46,10 @@ ax.legend()
 fig, (ax1,ax2) = plt.subplots(2,1)
 my_plotter(ax1, None, df["obs0"], "Plot1", "xAxis", "yAxis", {'marker': '.', 'label': 'obs0'})
 my_plotter(ax2, None, df["obs1"], "Plot2", "xAxis", "yAxis", {'marker': 'x', 'label': 'obs1'})
+
+# example 3
+fig, (ax3,ax4,ax5) = plt.subplots(3,1)
+my_plotter(ax3, None, df_def["r"], "Rewards", "xAxis", "rew", {'marker': '', 'label': ''})
+my_plotter(ax4, None, df_def["l"], "Length of episodes", "xAxis", "len", {'marker': '', 'label': ''})
+my_plotter(ax5, None, df_def["t"], "Number of episodes", "xAxis", "num_ep", {'marker': '', 'label': ''})
 
