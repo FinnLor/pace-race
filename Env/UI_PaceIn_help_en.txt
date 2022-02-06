@@ -1,0 +1,57 @@
+Short Manual for the UI_PaceIn
+
+This UI is used for an import and visualization of PaceRace agents 
+and their behavior on different tracks. 
+For this purpose a few options are available, which are briefly explained below.
+An alphabetical list of the possible options is attached below.
+
+First, two exemplary procedures are explained in chronological form:
+
+Simplest variant:
+Step 1: Load a model with 'Load Model'.
+Step 2: Starting the rendering with 'Take Random Track'.
+
+More complex variant:
+Step 1: As above.
+Optional steps: 
+- Select the checkboxes 'Maintain car pos' and | or 'Plot performance'.
+- Enter a road width (default: 24m) and apply it with 'Apply Width'.
+- Enter a sequence of points in Canvas (without overlapping) and apply it with 'Apply Track'.
+- If wished, delete a track with 'Clear Track' and optionally enter a new track.
+- Start rendering with a randomly generated track 'Take Random Track' or 
+  a manually generated track 'Take User Track'. 
+
+
+Alphabetical, short overview of all options:
+
+Apply Track (Button):
+   Apply the road track displayed in the canvas as a center line.
+Apply Width (Button):
+   Apply the street width which is entered in the 'Entry Button'.
+Clear Track (Button):
+   Deletes the street track. This allows you to enter a new track.
+Load Model (Button):
+   Load an agent that was created with the SAC algorithm from 
+   stable-baselines3.
+   Note: Currently only SAC models can be loaded.
+Maintain Car Pos (Checkbox):
+   Selecting this checkbox causes all car positions to be visualized during rendering.
+   are visualized.
+More => Help (Menu Item):
+   This short help.
+More => About (Menu Item):
+   Short info about the project.
+Plot Performance (Checkbox):
+   Additional output of the following diagrams during rendering:
+   - Display of resultant forces 'F_res' over iterations 'Steps'.
+   - Display of the normalized power 'P' value range: [-1:1] over the iterations 'Steps'.
+   - Display of the cumulated reward 'SumRewards' over the iterations 'Steps'.
+Quit (Menu Bar): 
+   Quit UI_PaceIn.
+RoadWidth (Entry Button):
+   possibility to enter a road width as an integer, within the given range of values [8:40].
+Take Random Track (Button):
+   This starts a render episode with a randomly generated track and the loaded model.
+Take User Track (Button):
+   This starts a render episode with the manually generated track and the loaded model.
+

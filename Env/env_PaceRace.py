@@ -256,6 +256,8 @@ class PaceRaceEnv(gym.Env):
                 #     print(f"--got resumed! at {self.num_iterations}")
                 # if resume_successful == False:
                 #     raise NotImplementedError(f"Calculation of psi failed: {self.num_iterations}")
+        else:
+            violation = False  
             
         ######################################################################
         ####################### --- REWARD SECTION --- ####################### 
