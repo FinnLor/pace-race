@@ -252,17 +252,17 @@ class Render():
                 P = info['act'][0]
                 self.P.append(P)
                 
-                # get sum_rewards
+                # get sum_rewards and plotlims
                 RewardCheck = info['RewardCheck']
                 self.RewardCheck.append(RewardCheck)
+                min_R_data = np.min(self.RewardCheck)
+                max_R_data = np.max(self.RewardCheck)
                 
                 # set it together
                 self.render_step_array.append(np.shape(self.render_step_array)[0])
                 self.F_data.append([np.shape(self.render_step_array)[0],F_res])
                 self.P_data.append([np.shape(self.render_step_array)[0],P])
-                self.R_data.append([np.shape(self.render_step_array)[0],RewardCheck])
-                min_R_data = np.min(self.R_data)
-                max_R_data = np.max(self.R_data)
+                self.R_data.append([np.shape(self.render_step_array)[0],RewardCheck])       
                 
                 # plot the performance efficiency data
                 if self.render_step % 100 == 0:
@@ -274,7 +274,7 @@ class Render():
                     self.scat2.set_offsets(self.P_data)
                     self.plot2.set_xlim(0,self.render_step)
                     self.scat2.axes.figure.canvas.draw_idle()
-
+       
                     self.scat3.set_offsets(self.R_data)
                     self.plot3.set_xlim(0,self.render_step)
                     self.plot3.set_ylim(min_R_data,max_R_data)
