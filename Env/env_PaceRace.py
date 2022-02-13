@@ -65,7 +65,7 @@ class PaceRaceEnv(gym.Env):
 
     """
 
-    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, SENS_SCALE=1, CT=0.1, MU=1.0, P=100_000, ROADLENGTH = 10, verbose = 0, custom_center_line = None, custom_roadwidth=None):
+    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, SENS_SCALE=1, CT=0.1, MU=1.0, P=100_000, ROADLENGTH=10, verbose=0, custom_center_line=None, custom_roadwidth=None):
         """
         
         Initializes Pace-Race reinforcement learning object.
@@ -191,7 +191,8 @@ class PaceRaceEnv(gym.Env):
 
         # FOR OLD VERSION OF GYM
         self.seed()
-
+        
+        
     def step(self, action):
         
         # Rescale the normalized actions
@@ -310,7 +311,7 @@ class PaceRaceEnv(gym.Env):
         self.episode_reward += reward
         
         # self.Reward_Check +=self.episode_reward # only needed if we want to cumulate the reward again
-        self.Reward_Check =self.episode_reward # also only needed if we want to cumulate the reward again
+        self.Reward_Check =self.episode_reward # also only needed if we want to cumulate the reward   ##### WOZU SOLL DAS GUT SEIN?
         
         # Update path_length
         self.last_path_length = curr_path_length
