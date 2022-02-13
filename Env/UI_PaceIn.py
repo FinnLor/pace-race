@@ -441,7 +441,7 @@ class UIPace():
             display = Render()
             done = False
             while done == False:
-                action, _state = self.model.predict(obs) # agent, get next action from last obs
+                action, _state = self.model.predict(obs, deterministic=True) # agent, get next action from last obs
                 obs, reward, done, info = env.step(action) # input action, get next obs
                 if self.cb_old.get() == 1:
                     delete_old = False
@@ -484,7 +484,7 @@ class UIPace():
             display = Render()  
             done = False
             while done == False:
-                action, _state = self.model.predict(obs) # agent, get next action from last obs
+                action, _state = self.model.predict(obs, deterministic=True) # agent, get next action from last obs
                 obs, reward, done, info = env.step(action) # input action, get next obs
                 if self.cb_old.get() == 1:
                     delete_old = False
