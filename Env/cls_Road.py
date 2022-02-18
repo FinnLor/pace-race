@@ -81,7 +81,7 @@ class Road:
             y = np.cumsum((np.random.rand(ROADLENGTH)-0.5)*2)*10*ROADLENGTH               
             if ROADLENGTH < 3:
                 f = interp1d(x, y, kind='linear')
-                x = np.linspace(x[0], x[ROADLENGTH-1], 2)
+                x = np.linspace(x[0], x[ROADLENGTH-1], NPOINTS)
             else: 
                 f = interp1d(x, y, kind='quadratic')
                 x = np.linspace(x[0], x[ROADLENGTH-1], NPOINTS)
