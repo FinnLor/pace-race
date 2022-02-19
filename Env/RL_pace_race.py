@@ -19,15 +19,15 @@ from LogTraining import CustomTrainingLogCallback, CustomEvalLogCallback, load_L
 
 
 ### CONFIGURATION
-config = {'total_timesteps': 200_000,
+config = {'total_timesteps': 500_000,
           'log_keys': ('obs', 'act', 'Fres'),           # custom Train-Logger
-          'log_freq_epoch_train': 10,                   # custom Train-Logger
+          'log_freq_epoch_train': 4,                    # custom Train-Logger
           'log_freq_step_train': 1,                     # custom Train-Logger
-          'log_freq_epoch_eval': 1,                     # custom Eval-Logger
+          'log_freq_epoch_eval': 4,                     # custom Eval-Logger
           'monitor_log_path': 'TrainLog/DefaultLog',    # integrated Logger
           'save_path_models': "models//sac_pace_race"}
 
-with open('example_eval_tracks.pkl', "rb") as f:  
+with open('eval_track.pkl', "rb") as f:  
     eval_center_lines, eval_roadwidths  = pickle.load(f)
 
 

@@ -232,7 +232,7 @@ class CustomEvalLogCallback(BaseCallback):
                     obs, reward, done, info = self.eval_env.step(action)
                     episode_rewards += reward
                     episode_lengths += 1
-                ret.update({"num_iter_road_"+ str(i): episode_lengths, "reward_road_" + str(i): episode_rewards})
+                ret.update({"num_iter_road_"+ str(i): episode_lengths, "reward_road_" + str(i): episode_rewards[0]})
                 
             self.logger.writerow(ret)
             self.file_handler.flush()
