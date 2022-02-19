@@ -381,7 +381,7 @@ class UIPace():
         
         ui_about = tk.Toplevel()
         ui_about.title("About")
-        image = Image.open("splash_OKS_de.png")
+        image = Image.open("splash_OKS_en.png")
         photo = ImageTk.PhotoImage(image)
         ui_about.config(width=photo.width()+4, height=photo.height()+4)
         label_photo = ttk.Label(ui_about, image=photo)
