@@ -265,7 +265,7 @@ class Render():
                 self.R_data.append([np.shape(self.render_step_array)[0],RewardCheck])       
                 
                 # plot the performance efficiency data
-                if self.render_step % 100 == 0:
+                if self.render_step % 100 == 0 or self.done:
                     
                     self.scat1.set_offsets(self.F_data)
                     self.plot1.set_xlim(0,self.render_step)
