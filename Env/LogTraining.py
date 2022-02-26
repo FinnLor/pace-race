@@ -99,7 +99,7 @@ class CustomTrainingLogCallback(BaseCallback):
         if self.before_first_step:
             updated_fieldnames = ["epoch","iter"]
             for key in self.info_keywords:
-                try:
+                try: # works only for a sequence (string, tuple, list ...) or collection (dict, set...)
                     for i in range(len(self.model.env.buf_infos[0][key])):
                         subkey = key + str(i)   
                         updated_fieldnames.append(subkey)
@@ -118,7 +118,7 @@ class CustomTrainingLogCallback(BaseCallback):
                 
                 ret = {'epoch': self.model._episode_num,'iter': self.iter}
                 for key in self.info_keywords:
-                    try: 
+                    try: # works only for a sequence (string, tuple, list ...) or collection (dict, set...)
                         for i in range(len(self.model.env.buf_infos[0][key])):
                             subkey = key + str(i)
                             ret[subkey] = self.model.env.buf_infos[0][key][i]
@@ -142,6 +142,7 @@ class CustomTrainingLogCallback(BaseCallback):
         """
         This event is triggered before exiting the `learn()` method.
         """
+        
         # Close file
         self.file_handler.close()
         
@@ -159,6 +160,30 @@ class CustomEvalLogCallback(BaseCallback):
                  log_name: str = 'EvalLog', 
                  log_freq_epoch: int = 10, 
                  verbose=0):
+        """
+        
+        Parameters
+        ----------
+        eval_env : Union[gym.Env, VecEnv]
+            OpenAI Gym environment uses for evaluation of agent.
+        eval_center_lines : list of np.ndarray with size [nx2]
+            List of custom rajectories in R2 [x,y]-value-pairs.
+        eval_roadwidths : List of int or float
+            Widths of the roadways. Non-negative values.
+        log_dir : str, optional
+            Directory to save the log-file. The default is 'TrainLog'.
+        log_name : str, optional
+            Name of the log-file. The default is 'EvalLog'.
+        log_freq_epoch : int, optional
+            Frequency of epochs for validation and logging. The default is 10.
+        verbose : TYPE, optional
+            Verbosity. The default is 0.
+
+        Returns
+        -------
+        None.
+
+        """        
         
         super(CustomEvalLogCallback, self).__init__(verbose)
         
@@ -194,7 +219,6 @@ class CustomEvalLogCallback(BaseCallback):
         This method is called before the first rollout starts.
         """
                
-            
         if not isinstance(self.model.env, type(self.eval_env)):
             warnings.warn("Training and eval env are not of the same type" f"{self.model.env} != {self.eval_env}")
         
@@ -230,8 +254,7 @@ class CustomEvalLogCallback(BaseCallback):
 
         :return: (bool) If the callback returns False, training is aborted early.
         """
-         
-
+        
         # Write to file 
         if (self.model._episode_num % self.log_freq_epoch) == 0 and self.model.env.buf_dones[0]:  
 
@@ -269,6 +292,21 @@ class CustomEvalLogCallback(BaseCallback):
         
         
 def load_Log(file_name: str):
+    """
+    
+    Function to load Train- or Eval-Logs to pandas DataFrame.
+
+    Parameters
+    ----------
+    file_name : str
+        Name of Log to load.
+
+    Returns
+    -------
+    data_frame : pandas DataFrame
+        Imported Log as pandas DataFrame.
+
+    """
     file_name = file_name + ".monitor.csv"
     with open(file_name, "rt") as file_handler:
         first_line = file_handler.readline()
