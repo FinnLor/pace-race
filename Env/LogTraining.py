@@ -21,12 +21,32 @@ import numpy as np
 
 class CustomTrainingLogCallback(BaseCallback):
     """
-    A custom callback that derives from ``BaseCallback``.
-
-    :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
+    A custom callback to log variables from the info-dict.
     """
     def __init__(self,  info_keywords: Tuple[str, ...], log_dir: str = 'TrainLog', log_name: str = 'CustomLog', 
                  log_freq_epoch: int = 1_000, log_freq_step: int = 1, verbose=0):
+        """
+        
+        Parameters
+        ----------
+        info_keywords : Tuple[str, ...]
+            Keys from the info-dict, which should be logged.
+        log_dir : str, optional
+            Directory to save the log-file. The default is 'TrainLog'.
+        log_name : str, optional
+            Name of the log-file. The default is 'CustomLog'.
+        log_freq_epoch : int, optional
+            Frequency of epochs to be logged. The default is 1_000.
+        log_freq_step : int, optional
+            Frequency of iterations to be within a logged epoch. The default is 1.
+        verbose : TYPE, optional
+            Verbosity. The default is 0.
+
+        Returns
+        -------
+        None.
+
+        """
         
         super(CustomTrainingLogCallback, self).__init__(verbose)
         
@@ -54,8 +74,6 @@ class CustomTrainingLogCallback(BaseCallback):
         # Open file
         self.file_handler = open(filename, "wt", newline="\n")
         self.file_handler.write("#%s\n" % json.dumps(header))
-        # self.logger = csv.DictWriter(self.file_handler, fieldnames=("epoch","iter") + self.info_keywords)
-        # self.logger.writeheader()
         self.file_handler.flush()
         
         # Initialize counter
@@ -81,7 +99,7 @@ class CustomTrainingLogCallback(BaseCallback):
         if self.before_first_step:
             updated_fieldnames = ["epoch","iter"]
             for key in self.info_keywords:
-                try: # works only for a sequence (string, tuple, list ...) or collection (dict, set...)
+                try:
                     for i in range(len(self.model.env.buf_infos[0][key])):
                         subkey = key + str(i)   
                         updated_fieldnames.append(subkey)
@@ -100,7 +118,7 @@ class CustomTrainingLogCallback(BaseCallback):
                 
                 ret = {'epoch': self.model._episode_num,'iter': self.iter}
                 for key in self.info_keywords:
-                    try: # works only for a sequence (string, tuple, list ...) or collection (dict, set...)
+                    try: 
                         for i in range(len(self.model.env.buf_infos[0][key])):
                             subkey = key + str(i)
                             ret[subkey] = self.model.env.buf_infos[0][key][i]
@@ -132,9 +150,7 @@ class CustomTrainingLogCallback(BaseCallback):
   
 class CustomEvalLogCallback(BaseCallback):
     """
-    A custom callback that derives from ``BaseCallback``.
-
-    :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
+    A custom callback to evaluate a agend on a reference tracks frequently.
     """
     def __init__(self,  eval_env: Union[gym.Env, VecEnv], 
                  eval_center_lines, 
