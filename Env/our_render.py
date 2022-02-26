@@ -104,7 +104,7 @@ class Render():
         self.R_data = []
 
 
-    def update(self, env, done, info=None, plot_performance=False, delete_old = True, color="blue"):
+    def update(self, env, done, info=None, plot_performance=False, delete_old=True, color="blue"):
         """
         
         Returns the relative (default) or absolute distance from the first point of the road to a specified point, 
@@ -133,67 +133,11 @@ class Render():
         """
 
         self.done = done
-        if self.render_step == 0:  # NEU ERSETZT
-        
-            # set whether old car should be deleted
-            self.delete_old = delete_old
+        if self.render_step == 0:
             
-            # get canvas height for up-down-flipping
-            self.Y = self.canvas.winfo_reqheight()-4 # height of canvas, minus 4 is necessary
-            self.X = self.canvas.winfo_reqwidth()-4 # width of canvas, minus 4 is necessary
+            self._render_basics(env, done, info, plot_performance, delete_old, color)
+        
 
-            # extract road data
-            x, y   = LineString(env.road.center_line).xy
-            xl, yl = LineString(env.road.left_line).xy
-            xr, yr = LineString(env.road.right_line).xy
-            y = np.subtract(self.Y, y)
-            yl = np.subtract(self.Y, yl)
-            yr = np.subtract(self.Y, yr)
-
-            # get data for best adaption of the road into the canvas
-            self.min_x = min(min(x)-env.roadwidth, min(x)+env.roadwidth)
-            max_x = max(max(x)-env.roadwidth, max(x)+env.roadwidth)
-            self.min_y = min(min(y)-env.roadwidth, min(y)+env.roadwidth)
-            max_y = max(max(y)-env.roadwidth, max(y)+env.roadwidth)
-            delta_x = max_x - self.min_x
-            delta_y = max_y - self.min_y
-            self.factor_x = self.CANVAS_WIDTH / delta_x
-            self.factor_y = self.CANVAS_HEIGHT / delta_y
-            self.factor = min(self.factor_x, self.factor_y) # resizing self.factor, e.g. FAKTOR=10 => 10pixel==1m
-
-            # align road data to render_gui
-            x = self.factor * np.add(x, -self.min_x)
-            y = self.factor * np.add(y, -self.min_y)
-            xl = self.factor * np.add(xl, -self.min_x)
-            yl = self.factor * np.add(yl, -self.min_y)
-            xr = self.factor * np.add(xr, -self.min_x)
-            yr = self.factor * np.add(yr, -self.min_y)
-
-            # generate road lines
-            center_line_data = list((np.ravel(([x,y]),'F'))) # list is neccessary for a correct separation with comma
-            self.canvas.create_line(center_line_data, dash=(4), fill="grey", width=1)
-            left_line_data   = list((np.ravel(([xl,yl]),'F'))) # list is neccessary for a correct separation with comma
-            self.canvas.create_line(left_line_data, fill="brown", width=2)
-            right_line_data  = list((np.ravel(([xr,yr]),'F'))) # list is neccessary for a correct separation with comma
-            self.canvas.create_line(right_line_data, fill="brown", width=2)
-
-            # generate 10m-measure-line
-            x_m = [-100 + self.X/2-(5*self.factor), -100 + self.X/2+(5*self.factor)]
-            y_m = [self.Y-10, self.Y-10]
-            measure_line_data = list((np.ravel(([x_m,y_m]),'F')))
-            self.canvas.create_line(measure_line_data, width=6)
-
-            # generate measurement text
-            self.canvas_text_pixel= self.canvas.create_text(-92 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
-            self.canvas.itemconfig(self.canvas_text_pixel, text="=10m (1 Pixel:  m),")
-            str_meter_pro_pixel = '{:.2f}'.format(1/self.factor)
-            self.canvas.insert(self.canvas_text_pixel, 15, str_meter_pro_pixel)
-           
-            # generate resume-counter 
-            self.canvas_text_resumes = self.canvas.create_text(95 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
-            self.canvas.itemconfig(self.canvas_text_resumes, text="amount of resumes: ")
-            str_num_resumes = '{:.0f}'.format(self.num_Resumes)
-            self.canvas.insert(self.canvas_text_resumes, 19, str_num_resumes)
             
             if plot_performance == True:
 
@@ -344,10 +288,74 @@ class Render():
         if self.stop == True:
             self.render_gui.destroy()
         if self.done == True:
+            self._render_basics(env, done, info, plot_performance, delete_old, color)
             print(f'End of race, {self.render_step} steps needed.')
             self.render_gui.mainloop()
 
         return self.stop
+
+
+    def _render_basics(self, env, done, info, plot_performance, delete_old, color):
+        
+        # set whether old car should be deleted
+        self.delete_old = delete_old
+        
+        # get canvas height for up-down-flipping
+        self.Y = self.canvas.winfo_reqheight()-4 # height of canvas, minus 4 is necessary
+        self.X = self.canvas.winfo_reqwidth()-4 # width of canvas, minus 4 is necessary
+
+        # extract road data
+        x, y   = LineString(env.road.center_line).xy
+        xl, yl = LineString(env.road.left_line).xy
+        xr, yr = LineString(env.road.right_line).xy
+        y = np.subtract(self.Y, y)
+        yl = np.subtract(self.Y, yl)
+        yr = np.subtract(self.Y, yr)
+
+        # get data for best adaption of the road into the canvas
+        self.min_x = min(min(x)-env.roadwidth, min(x)+env.roadwidth)
+        max_x = max(max(x)-env.roadwidth, max(x)+env.roadwidth)
+        self.min_y = min(min(y)-env.roadwidth, min(y)+env.roadwidth)
+        max_y = max(max(y)-env.roadwidth, max(y)+env.roadwidth)
+        delta_x = max_x - self.min_x
+        delta_y = max_y - self.min_y
+        self.factor_x = self.CANVAS_WIDTH / delta_x
+        self.factor_y = self.CANVAS_HEIGHT / delta_y
+        self.factor = min(self.factor_x, self.factor_y) # resizing self.factor, e.g. FAKTOR=10 => 10pixel==1m
+
+        # align road data to render_gui
+        x = self.factor * np.add(x, -self.min_x)
+        y = self.factor * np.add(y, -self.min_y)
+        xl = self.factor * np.add(xl, -self.min_x)
+        yl = self.factor * np.add(yl, -self.min_y)
+        xr = self.factor * np.add(xr, -self.min_x)
+        yr = self.factor * np.add(yr, -self.min_y)
+
+        # generate road lines
+        center_line_data = list((np.ravel(([x,y]),'F'))) # list is neccessary for a correct separation with comma
+        self.canvas.create_line(center_line_data, dash=(4), fill="grey", width=1)
+        left_line_data   = list((np.ravel(([xl,yl]),'F'))) # list is neccessary for a correct separation with comma
+        self.canvas.create_line(left_line_data, fill="brown", width=2)
+        right_line_data  = list((np.ravel(([xr,yr]),'F'))) # list is neccessary for a correct separation with comma
+        self.canvas.create_line(right_line_data, fill="brown", width=2)
+
+        # generate 10m-measure-line
+        x_m = [-100 + self.X/2-(5*self.factor), -100 + self.X/2+(5*self.factor)]
+        y_m = [self.Y-10, self.Y-10]
+        measure_line_data = list((np.ravel(([x_m,y_m]),'F')))
+        self.canvas.create_line(measure_line_data, width=6)
+
+        # generate measurement text
+        self.canvas_text_pixel= self.canvas.create_text(-92 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
+        self.canvas.itemconfig(self.canvas_text_pixel, text="=10m (1 Pixel:  m),")
+        str_meter_pro_pixel = '{:.2f}'.format(1/self.factor)
+        self.canvas.insert(self.canvas_text_pixel, 15, str_meter_pro_pixel)
+       
+        # generate resume-counter 
+        self.canvas_text_resumes = self.canvas.create_text(95 + self.X/2+(5*self.factor), self.Y-25, anchor="nw")
+        self.canvas.itemconfig(self.canvas_text_resumes, text="amount of resumes: ")
+        str_num_resumes = '{:.0f}'.format(self.num_Resumes)
+        self.canvas.insert(self.canvas_text_resumes, 19, str_num_resumes)
 
     
     def close_render(self):
