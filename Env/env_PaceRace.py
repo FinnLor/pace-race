@@ -65,7 +65,7 @@ class PaceRaceEnv(gym.Env):
 
     """
 
-    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, SENS_SCALE=1, CT=0.1, MU=1.0, P=100_000, ROADLENGTH=10, verbose=0, custom_center_line=None, custom_roadwidth=None):
+    def __init__(self, CF=49_000, CR=49_000, M=1_000, LF=2, LR=2, CAR_WIDTH=2, SENS_SCALE=1, CT=0.1, MU=1.0, P=100_000, ROADLENGTH=10, max_iter_per_epoch = 2_000, verbose=0, custom_center_line=None, custom_roadwidth=None):
         """
         
         Initializes Pace-Race reinforcement learning object.
@@ -124,6 +124,7 @@ class PaceRaceEnv(gym.Env):
         self.ROADLENGTH = ROADLENGTH
         self.custom_center_line = custom_center_line
         self.verbose = verbose
+        self.max_iter_per_epoch= max_iter_per_epoch
 
         # Radius of traction circle            
         self.Fmax = M * 9.81 * MU 
@@ -214,7 +215,7 @@ class PaceRaceEnv(gym.Env):
         # Calculate acceleration
         if P == 0:
             a = 0
-        elif P > 0 and self.car01.vlon == 0:                    ## DAS SOLLTEN WIR NOCH ANPASSEN, da gar nicht alle Fälle auftreten dürfen!
+        elif P > 0 and self.car01.vlon == 0:                    
             a = 9.81*self.MU/math.sqrt(2)
         elif P < 0 and self.car01.vlon == 0:
             a = -9.81*self.MU/math.sqrt(2) # problematic?
@@ -251,12 +252,6 @@ class PaceRaceEnv(gym.Env):
             # Set car to resume-position, when violation
             if violation:
                 done = True
-                # resume_successful = self.car01.set_resume_pos(self.road)
-                # if self.verbose != 0:
-                #     self.num_Resumes += 1
-                #     print(f"--got resumed! at {self.num_iterations}")
-                # if resume_successful == False:
-                #     raise NotImplementedError(f"Calculation of psi failed: {self.num_iterations}")
         else:
             violation = False  
             
@@ -273,7 +268,7 @@ class PaceRaceEnv(gym.Env):
         #     reward += 2000
         
         #3                       
-        if self.num_iterations > 2000 and not done: # stop after a maximum o n iterations
+        if self.num_iterations > self.max_iter_per_epoch  and not done: # stop after a maximum o n iterations
             done = True
             # reward += -3000 + curr_path_length * 3000 # if stopped by exceeding time limit, reward proportionally to achieved progress
             # print(f'reached path_length: {curr_path_length}')
@@ -356,15 +351,6 @@ class PaceRaceEnv(gym.Env):
         self.num_episodes += 1
         self.rewEval = 0 # value of empiric reward function
          
-        # self.MU = round(random.uniform(0.3,1.0),2) # variable friction coefficient
-        
-        # # Construct new road
-        # if self.custom_center_line == None:
-        #     self.roadwidth = round(random.uniform(self.car01.WIDTH*5,self.car01.WIDTH*10), 2)
-        #     self.road = Road(ROADWIDTH=self.roadwidth, ROADLENGTH = self.ROADLENGTH, NPOINTS = 1000)
-        # else:
-        #     self.road = Road(ROADWIDTH=self.roadwidth, custom_center_line = self.custom_center_line)
-            
         # Construct new road
         if np.any(self.custom_center_line) == None:
             if  self.roadwidth == None:

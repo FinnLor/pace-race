@@ -436,7 +436,7 @@ class UIPace():
         if self.model_ok == True:
             
             # test road with a random model
-            env = PaceRaceEnv(custom_roadwidth=self.road_width, verbose =1)
+            env = PaceRaceEnv(custom_roadwidth=self.road_width, max_iter_per_epoch = 10e10, verbose =1)
             obs = env.reset() # get initial obs
             display = Render()
             done = False
@@ -479,7 +479,7 @@ class UIPace():
             data = np.transpose([x,y])
 
             # test road with the loaded model
-            env = PaceRaceEnv(custom_center_line = data, custom_roadwidth=self.road_width, verbose =1)
+            env = PaceRaceEnv(custom_center_line = data, custom_roadwidth=self.road_width, max_iter_per_epoch = 10e10, verbose =1)
             obs = env.reset() # get initial obs
             display = Render()  
             done = False

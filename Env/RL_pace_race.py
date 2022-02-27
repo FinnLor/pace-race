@@ -19,7 +19,7 @@ from LogTraining import CustomTrainingLogCallback, CustomEvalLogCallback, load_L
 
 
 ### CONFIGURATION
-config = {'total_timesteps': 500_000,
+config = {'total_timesteps': 100_000,
           'log_keys': ('obs', 'act', 'Fres'),           # custom Train-Logger
           'log_freq_epoch_train': 4,                    # custom Train-Logger
           'log_freq_step_train': 1,                     # custom Train-Logger
@@ -32,21 +32,21 @@ with open('eval_track.pkl', "rb") as f:
 
 
 ### ENV SETUP
-env = Monitor(PaceRaceEnv(verbose = 0, ROADLENGTH=10), filename=config['monitor_log_path'])
+env = Monitor(PaceRaceEnv(verbose = 0, ROADLENGTH=10, MU=0.4), filename=config['monitor_log_path'])
 check_env(env, warn=True)
 
 
 ### MODEL SETUP
-model = SAC("MlpPolicy",
-            env,
-            verbose=1,
-            )
+# model = SAC("MlpPolicy",
+#             env,
+#             verbose=1,
+#             )
 
 # Load pre-trained model
 # model = SAC.load("models/sac_pace_race_FL_01_20220122.zip")
 # model = SAC.load("models/sac_pace_race_FS_02_210122.zip")
-# model = SAC.load("models/sac_pace_race_EM_takethis.zip")
-#model.set_env(env)
+model = SAC.load("models/sac_pace_race_mu0p6.zip")
+model.set_env(env)
 
 
 ### CALLBACKS

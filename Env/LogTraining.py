@@ -21,12 +21,32 @@ import numpy as np
 
 class CustomTrainingLogCallback(BaseCallback):
     """
-    A custom callback that derives from ``BaseCallback``.
-
-    :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
+    A custom callback to log variables from the info-dict.
     """
     def __init__(self,  info_keywords: Tuple[str, ...], log_dir: str = 'TrainLog', log_name: str = 'CustomLog', 
                  log_freq_epoch: int = 1_000, log_freq_step: int = 1, verbose=0):
+        """
+        
+        Parameters
+        ----------
+        info_keywords : Tuple[str, ...]
+            Keys from the info-dict, which should be logged.
+        log_dir : str, optional
+            Directory to save the log-file. The default is 'TrainLog'.
+        log_name : str, optional
+            Name of the log-file. The default is 'CustomLog'.
+        log_freq_epoch : int, optional
+            Frequency of epochs to be logged. The default is 1_000.
+        log_freq_step : int, optional
+            Frequency of iterations to be within a logged epoch. The default is 1.
+        verbose : TYPE, optional
+            Verbosity. The default is 0.
+
+        Returns
+        -------
+        None.
+
+        """
         
         super(CustomTrainingLogCallback, self).__init__(verbose)
         
@@ -54,8 +74,6 @@ class CustomTrainingLogCallback(BaseCallback):
         # Open file
         self.file_handler = open(filename, "wt", newline="\n")
         self.file_handler.write("#%s\n" % json.dumps(header))
-        # self.logger = csv.DictWriter(self.file_handler, fieldnames=("epoch","iter") + self.info_keywords)
-        # self.logger.writeheader()
         self.file_handler.flush()
         
         # Initialize counter
@@ -124,6 +142,7 @@ class CustomTrainingLogCallback(BaseCallback):
         """
         This event is triggered before exiting the `learn()` method.
         """
+        
         # Close file
         self.file_handler.close()
         
@@ -132,9 +151,7 @@ class CustomTrainingLogCallback(BaseCallback):
   
 class CustomEvalLogCallback(BaseCallback):
     """
-    A custom callback that derives from ``BaseCallback``.
-
-    :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
+    A custom callback to evaluate a agend on a reference tracks frequently.
     """
     def __init__(self,  eval_env: Union[gym.Env, VecEnv], 
                  eval_center_lines, 
@@ -143,6 +160,30 @@ class CustomEvalLogCallback(BaseCallback):
                  log_name: str = 'EvalLog', 
                  log_freq_epoch: int = 10, 
                  verbose=0):
+        """
+        
+        Parameters
+        ----------
+        eval_env : Union[gym.Env, VecEnv]
+            OpenAI Gym environment uses for evaluation of agent.
+        eval_center_lines : list of np.ndarray with size [nx2]
+            List of custom rajectories in R2 [x,y]-value-pairs.
+        eval_roadwidths : List of int or float
+            Widths of the roadways. Non-negative values.
+        log_dir : str, optional
+            Directory to save the log-file. The default is 'TrainLog'.
+        log_name : str, optional
+            Name of the log-file. The default is 'EvalLog'.
+        log_freq_epoch : int, optional
+            Frequency of epochs for validation and logging. The default is 10.
+        verbose : TYPE, optional
+            Verbosity. The default is 0.
+
+        Returns
+        -------
+        None.
+
+        """        
         
         super(CustomEvalLogCallback, self).__init__(verbose)
         
@@ -178,7 +219,6 @@ class CustomEvalLogCallback(BaseCallback):
         This method is called before the first rollout starts.
         """
                
-            
         if not isinstance(self.model.env, type(self.eval_env)):
             warnings.warn("Training and eval env are not of the same type" f"{self.model.env} != {self.eval_env}")
         
@@ -214,8 +254,7 @@ class CustomEvalLogCallback(BaseCallback):
 
         :return: (bool) If the callback returns False, training is aborted early.
         """
-         
-
+        
         # Write to file 
         if (self.model._episode_num % self.log_freq_epoch) == 0 and self.model.env.buf_dones[0]:  
 
@@ -253,6 +292,21 @@ class CustomEvalLogCallback(BaseCallback):
         
         
 def load_Log(file_name: str):
+    """
+    
+    Function to load Train- or Eval-Logs to pandas DataFrame.
+
+    Parameters
+    ----------
+    file_name : str
+        Name of Log to load.
+
+    Returns
+    -------
+    data_frame : pandas DataFrame
+        Imported Log as pandas DataFrame.
+
+    """
     file_name = file_name + ".monitor.csv"
     with open(file_name, "rt") as file_handler:
         first_line = file_handler.readline()
