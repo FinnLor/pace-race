@@ -13,8 +13,8 @@ import numpy as np
 import random
 
 # Custom
-from cls_Car import Car
-from cls_Road import Road
+from Env.cls_Car import Car
+from Env.cls_Road import Road
 
 
 class PaceRaceEnv(gym.Env):
