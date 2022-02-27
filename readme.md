@@ -26,7 +26,7 @@ In Progress.
 * stable_baselines3  
 * tkinter  
 
-For a Windows operating system, install the conda environment from folder ```condaEnv\```.
+For a Windows operating system, install the conda environment from folder ```condaEnv/```.
 
 ### Installing
 
@@ -40,7 +40,7 @@ git clone https://github.com/FinnLor/pace-race.git
 * GUI.py opens a GUI where you can load a SAC model and run it either on randomized tracks or on a track that you individually specify by width and path points
 
 ### Models
-* Trained agents of a parameter study and a algorithm benchmarking study can be found in ```models\```.
+* Trained agents of a parameter study and a algorithm benchmarking study can be found in ```models/```.
 
 
 ## Authors
