@@ -54,8 +54,7 @@ Eliseo Milonia
 Felix Schönig  
 
 
-## Version History
+## Version
 
+* 1.0
 
-* Pre-Alpha
-    * work-in-progress
