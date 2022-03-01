@@ -7,6 +7,8 @@ Welcome to PaceRace, a student project to optimize the laptime of a 2D vehicle o
 In Progress.
 
 ## Getting Started
+In this work we aim to optimize the lap time of a vehicle on randomly generated tracks. A two dimensional, dynamical vehicle model is derived and a simple generator of random 2D-tracks is developed. We show one way to define a useful reward function for the problem and then apply reinforcement learning algorithms to solve the optimization task. The implementation of equations and frameworks is presented. The results are validated by performing a parameter study on the friction coefficient concerning tire and track, where an agent is trained in various settings and the resulting performances are examined.
+
 
 ### Dependencies
 
